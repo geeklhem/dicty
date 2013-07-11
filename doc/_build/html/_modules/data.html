@@ -1,0 +1,137 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>data &mdash; DICTy alpha documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'alpha',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="DICTy alpha documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">DICTy alpha documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for data</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env/ python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Loading data&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="Data"><a class="viewcode-back" href="../data.html#data.Data">[docs]</a><span class="k">class</span> <span class="nc">Data</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Hold data about a film &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pointsfile</span><span class="p">,</span><span class="n">csl</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                    <span class="n">x</span><span class="o">=</span><span class="p">(</span><span class="mi">9744</span><span class="o">*</span><span class="mi">500</span><span class="o">/</span><span class="mi">789</span><span class="p">),</span><span class="n">y</span><span class="o">=</span><span class="p">(</span><span class="mi">7280</span><span class="o">*</span><span class="mi">500</span><span class="o">/</span><span class="mi">789</span><span class="p">)):</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">x</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">Y</span> <span class="o">=</span> <span class="n">y</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">load_data</span><span class="p">(</span><span class="n">pointsfile</span><span class="p">,</span><span class="n">csl</span><span class="p">)</span>
+              
+<div class="viewcode-block" id="Data.load_data"><a class="viewcode-back" href="../data.html#data.Data.load_data">[docs]</a>    <span class="k">def</span> <span class="nf">load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">pointsfile</span><span class="p">,</span><span class="n">csl</span><span class="p">):</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">pointsfile</span><span class="p">,</span>
+                               <span class="n">skip_header</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                               <span class="n">delimiter</span><span class="o">=</span><span class="s">&quot;,&quot;</span><span class="p">,</span>
+                               <span class="n">usecols</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">),</span>
+                               <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s">&quot;area&quot;</span><span class="p">,</span><span class="s">&quot;x&quot;</span><span class="p">,</span><span class="s">&quot;y&quot;</span><span class="p">,</span><span class="s">&quot;img&quot;</span><span class="p">))</span>
+
+
+        <span class="c"># Points for successives images</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">images</span><span class="p">[</span><span class="s">&quot;img&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span> 
+                                       <span class="k">for</span> <span class="n">ar</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">sl</span> 
+                                       <span class="ow">in</span> <span class="n">images</span>
+                                       <span class="k">if</span> <span class="p">(</span><span class="n">ar</span> <span class="o">&lt;</span> <span class="n">csl</span> <span class="ow">and</span>
+                                           <span class="n">sl</span> <span class="o">==</span> <span class="n">img</span><span class="p">)]))))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frame_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;slice_{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_nb</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frame_names</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Data.density"><a class="viewcode-back" href="../data.html#data.Data.density">[docs]</a>    <span class="k">def</span> <span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">precision</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compute the density of the particle and return a</span>
+<span class="sd">        frame_nb(precision*precsion) list of array&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">DICTy alpha documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2013, Guilhem Doulcier.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
