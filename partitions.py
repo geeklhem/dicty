@@ -31,7 +31,7 @@ def voronoi(center,points):
 
 def optics(points,threshold):
     pts = np.transpose(points)
-    order,reach = op.optics(pts,500,5)
+    order,reach = op.optics(pts,500,15)
     c = 1
     attr = [0]*(len(order)+1)
     already = 0

@@ -11,7 +11,7 @@ import math
 import numpy as np
 import itertools 
 
-def optics(points,eps,M):
+def optics(points,eps,M=15):
     """ Optics algorithm
     :param points:
     :param eps:
@@ -134,3 +134,80 @@ points = np.array([[ 15.,  70.],
                   [ 43.,  97.],
                   [ 97.,   9.]])
 result = [0, 1, 5, 6, 2, 7, 8, 3, 4, 9]
+    
+def find_cluster(reach,ksi=0.005,M=15):
+    steep_down_list = []
+    clusters = []
+    mib = 0
+    i = 0
+    nc = 0
+    while i < len(reach)-2:
+        #print("i={}, reach={}".format(i,reach[i]))
+        mib = max(mib,reach[i])
+        if reach[i]*(1-ksi) <= reach[i+1]:
+            print("STEEP DOWN starting in {}".format(i))
+            steep_down_list = update_and_filter(steep_down_list,reach,i,ksi,mib)
+            sigma = 0
+            while reach[i]<=reach[i-1] and sigma < M:
+                i += 1
+                if reach[i]*(1-ksi) <= reach[i+1]:
+                    sigma = 0
+                else:
+                    sigma += 1
+            print("Ending in {}\n".format(i))
+            i +=1
+            steep_down_list.append([i,0])
+            mib = reach[i]
+        elif reach[i]*(1-ksi) >= reach[i+1]:
+            print("STEEP UP starting in {}".format(i))
+            steep_down_list = update_and_filter(steep_down_list,reach,i,ksi,mib)
+            sigma = 0
+            while reach[i]>=reach[i-1] and sigma < M:
+                i += 1
+                if reach[i]*(1-ksi) >= reach[i+1]:
+                    sigma = 0
+                else:
+                    sigma += 1
+            print("Ending in {}\n".format(i))
+            i +=1
+            mib = reach[i]
+            for D in steep_down_list:
+                if reach[i]*(1-ksi) >= D[1]:
+                    s,e = compute_cluster(i,reach,D,ksi)
+                    print("Cluster possible in [{},{}] ({})\n".format(s,e,nc))
+                    nc += 1
+                    if cluster_cond(s,e,reach,M,ksi):
+                        clusters.append((s,e))
+                        print("Cluster confirmed\n")
+        else:
+            i += 1
+    return clusters
+
+def update_and_filter(steep_down,r,i,ksi,global_mib):
+    sd = []
+    for (s,mib) in steep_down:
+        mib = max(mib,global_mib)
+        if r[s] * (1-ksi) < global_mib:
+            sd.append([s,mib])
+    return sd
+
+def compute_cluster(i,r,D,ksi):
+    if r[D[0]] * (1-ksi) >= r[i+1]:
+        s = 0 #faux
+        return(s,i)
+    elif r[i+1] * (1-ksi) >= r[D[0]]:
+        e = 0 #faux
+        return(D[0],e)
+    else:
+        return(D[0],i)
+
+def cluster_cond(s,e,r,M,ksi):
+    if e-s < M:
+        return False
+    elif not r[e] <= r[e+1] * (1-ksi):
+        return False
+    elif not r[s] >= r[s+1] * (1-ksi):
+        return False
+    else:
+        return True
+

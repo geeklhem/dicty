@@ -13,8 +13,8 @@ import analysis
 def mock():
     # Load data and create export
     output = export.HtmlExport("mock_export")
-    experiment = data.Data("stack.csv")
-    experiment.groups = group_detection.from_file("centers35.csv")
+    experiment = data.Data("data/stack.csv")
+    experiment.groups = group_detection.from_file("data/centers35.csv")
     experiment.attribution = []
     experiment.cbs = []
     experiment.distrib = []
@@ -124,13 +124,17 @@ def mock():
     output.export()
 
 
-def opt_exp(mif=0,maf=20,thres=400):
+def opt_exp(mif=0,maf=None,thres=250):
     # Load data and create export
     output = export.HtmlExport("optics")
     print("Loading...")
-    experiment = data.Data("stack.csv")
+    experiment = data.Data("data/stack.csv")
     experiment.attribution = []
     experiment.reach = []
+    experiment.groups = []
+
+    if not maf:
+        maf = experiment.frame_nb
                         
     print("Analysis...")
     # ANALYSIS
@@ -139,6 +143,9 @@ def opt_exp(mif=0,maf=20,thres=400):
         attr,reach = partitions.optics(experiment.points[f], thres)
         experiment.reach.append(reach)
         experiment.attribution.append(attr)
+        experiment.groups.append(group_detection.from_attribution(experiment.points[f],
+                                                                  attr,
+                                                                  loners_index=0))
 
     # EXPORT 
     print("Export")
@@ -152,13 +159,24 @@ def opt_exp(mif=0,maf=20,thres=400):
     for f in range(maf-mif):
         print("{}/{}".format(f+mif+1,maf))
         output.add_title("Frame {0}".format(f+mif+1),3)
+        output.add_text("{} clusters, {} Loners detected".format(
+            experiment.groups[f]["N"],
+            experiment.groups[f]["loners"]))
         output.add_fig("particle_{0}".format(f+mif+1),
                        visual.plot_particle,
                        (experiment.points[f+mif],
                         experiment.attribution[f],
                         experiment.X,
-                        experiment.Y),
+                        experiment.Y,
+                        experiment.groups[f],
+                        experiment.groups[f]["cbs"]),
                        proportions=(2*float(experiment.X)/float(experiment.Y),2))
+
+        output.add_fig("reach_{0}".format(f+mif+1),
+                       visual.optics_reachability,
+                       (experiment.reach[f],),
+                       proportions=(2,1))
+
 
     ##  export 
     output.export()

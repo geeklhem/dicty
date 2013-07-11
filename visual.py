@@ -4,14 +4,23 @@
 
 import itertools
 import matplotlib.pyplot as plt
-import collections
 from matplotlib.patches import Circle
 import math
-import numpy as np
+import random
 
 
 def get_color():
-       return itertools.cycle(['r', 'g', 'b', 'c', 'm', 'y', 'k'])
+       index = [i/10. for i in range(11)]
+       colors = ([(1,0,i) for i in index] +
+                 [(1-i,0,1) for i in index]+
+                 [(0,i,1) for i in index]+
+                 [(0,1,1-i) for i in index]+
+                 [(0,1-i,0) for i in index]+
+                 [(i,0,0) for i in index]) 
+       random.shuffle(colors)
+       colors = ["k"] + colors #non optimal...
+       return itertools.cycle(colors)
+#       return itertools.cycle(['r', 'g', 'b', 'c', 'm', 'y', 'k'])
 
 def plot_particle(points,attribution,xlim,ylim,groups=None,cbs=None,show=True):
     #Colors
@@ -86,5 +95,15 @@ def areaplot(cbc,show=True):
               plt.fill_between(x,y,yc,color=c,alpha=0.5)
               y = [i for i in yc]
      
+       if show:
+              plt.show()
+
+       
+def optics_reachability(reach, show=True):
+       """Plots optics algorithm results"""     
+       plt.bar(range(len(reach)), reach, facecolor='k')
+       ax = plt.gca()
+       ax.set_ylabel("Reachability distance")
+       ax.set_xlabel("Points")
        if show:
               plt.show()
