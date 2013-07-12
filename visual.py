@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import math
 import random
+import numpy as np
 
 
 def get_color():
@@ -107,3 +108,64 @@ def optics_reachability(reach, show=True):
        ax.set_xlabel("Points")
        if show:
               plt.show()
+
+
+def plot_clust(r,co,cl,show=True):
+    plt.bar(range(len(r)),r,color=co,edgecolor=co); 
+    clust = [(e-s,s,e) for s,e in cl]
+    clust = sorted(clust, key=lambda x:x[0])
+    ystep = 700./len(clust)
+    y = 0
+    crossed = [0] * len(r)
+    line_breack=False
+    for l,s,e in clust:
+       for x in range(max(0,s-3),min(e+3,len(r))):
+              if not crossed[x]:
+                     crossed[x] = 1
+              else:
+                     line_breack = True
+                     crossed = [0] * len(r)
+       if line_breack:
+              y = y-ystep
+              line_breack=False
+       plt.hlines(xmin=s,xmax=e,y=y, linewidth=1)
+    if show:
+           plt.show()
+
+from matplotlib.collections import PolyCollection
+import matplotlib as mpl
+
+def plot_pclust(clust,pts,r,order,show=True):
+    verts = []
+    for c in clust:
+        pts_order = order[c[0]:(c[1])]
+        pts_list = [pts[:,o] for o in pts_order]
+        verts.append(pts_list) 
+
+
+    z = np.random.random(len(verts)) * 500
+
+    fig, ax = plt.subplots()
+
+    # Make the collection and add it to the plot.
+    coll = PolyCollection(verts, array=z, cmap=mpl.cm.jet,alpha=0.5,facecolor="None")
+    ax.add_collection(coll)
+    
+    ax.autoscale_view()
+    plot_particle(pts,[0]*len(pts),6000,5000,show=show)
+
+from matplotlib.path import Path
+import matplotlib.patches as patches
+
+def plot_path(pts,o,show=True):
+    pts_list = [pts[:,o] for o in order]
+    codes = [Path.MOVETO] + [Path.LINETO]*(len(pts_list)-1)
+    path = Path(pts_list, codes)
+    fig, ax = plt.subplots()
+    patch = patches.PathPatch(path, facecolor="None", lw=2)
+    ax.add_patch(patch)
+    ax.autoscale_view()
+    if show:
+        plt.show()
+
+

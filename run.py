@@ -8,6 +8,7 @@ import data
 import group_detection
 import partitions
 import analysis
+import optics
 
 
 def mock():
@@ -41,6 +42,7 @@ def mock():
                                                              experiment.groups["area"]))
         experiment.corr_cl_ls.append(analysis.lin_correlate(experiment.cbs[f],
                                                             experiment.loners))
+
 
 
 
@@ -123,15 +125,18 @@ def mock():
     ##  export 
     output.export()
 
-
-def opt_exp(mif=0,maf=None,thres=250):
+import random
+def opt_exp(mif=0,maf=None,M=15):
     # Load data and create export
-    output = export.HtmlExport("optics")
+    output = export.HtmlExport("02_optics")
     print("Loading...")
     experiment = data.Data("data/stack.csv")
     experiment.attribution = []
     experiment.reach = []
     experiment.groups = []
+    experiment.order = []
+    experiment.clust = []
+    experiment.distrib = []
 
     if not maf:
         maf = experiment.frame_nb
@@ -140,16 +145,27 @@ def opt_exp(mif=0,maf=None,thres=250):
     # ANALYSIS
     for f in range(mif,maf):
         print("{}/{}".format(f+1,maf))
-        attr,reach = partitions.optics(experiment.points[f], thres)
+        #random.shuffle(experiment.points[f])
+        attr,reach,order,cluster,color = partitions.optics_clust(experiment.points[f],
+                                                                 eps=9000,
+                                                                 ksi=0.001,
+                                                                 M=M)
         experiment.reach.append(reach)
+        experiment.order.append(order)
         experiment.attribution.append(attr)
         experiment.groups.append(group_detection.from_attribution(experiment.points[f],
                                                                   attr,
                                                                   loners_index=0))
+        experiment.clust.append((cluster,color))
+        experiment.distrib.append(analysis.group_size_distrib(experiment.groups[-1]["cbs"],
+                                                              experiment.groups[-1]["loners"],
+                                                              experiment.groups[-1]["N"]))
 
     # EXPORT 
     print("Export")
     output.add_text("Analysis of a film")
+    output.add_text("<strong>Clustering algorithm</strong> : Optics")
+    output.add_text("<strong>Parameters</strong> : M = {}".format(M))
 
 
     output.add_title("Global")
@@ -172,12 +188,23 @@ def opt_exp(mif=0,maf=None,thres=250):
                         experiment.groups[f]["cbs"]),
                        proportions=(2*float(experiment.X)/float(experiment.Y),2))
 
-        output.add_fig("reach_{0}".format(f+mif+1),
-                       visual.optics_reachability,
-                       (experiment.reach[f],),
-                       proportions=(2,1))
+        output.add_fig("creach_{0}".format(f+mif+1),
+                       visual.plot_clust,
+                       (experiment.reach[f],
+                        experiment.clust[f][1],
+                        experiment.clust[f][0]),
+                       proportions=(2*float(experiment.X)/float(experiment.Y),2))
+
+        output.add_fig("distrib_{0}".format(f),
+                       visual.distrib,(experiment.distrib[f]["crowding"],))
 
 
-    ##  export 
+        output.add_text("""
+        <strong>Mean crowding</strong> :   {0[mean_crowding]},
+        <strong>Mean group size</strong> : {0[mean_gs]} 
+        """.format(experiment.distrib[f]))
+
+
+    # ##  export 
     output.export()
     return output,experiment

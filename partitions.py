@@ -29,9 +29,9 @@ def voronoi(center,points):
     return attribution
 
 
-def optics(points,threshold):
+def optics_th(points,threshold,eps=9000,M=15):
     pts = np.transpose(points)
-    order,reach = op.optics(pts,500,15)
+    order,reach = op.optics(pts,eps,M)
     c = 1
     attr = [0]*(len(order)+1)
     already = 0
@@ -45,4 +45,20 @@ def optics(points,threshold):
             attr[o] = 0
         else:
             attr[o] = c
-    return attr,reach
+    return attr,reach,order
+
+def optics_clust(points,eps=9000,M=15,ksi=0.001):
+    pts = np.transpose(points)
+    order,reach = op.optics(pts,eps,M)
+    cluster,color = op.find_cluster(reach,ksi,M)
+    attribution = [0]*len(order)
+    clust = [(e-s,s,e) for s,e in cluster]
+    clust = sorted(clust, key=lambda x:x[0])
+    for k,c in enumerate(clust):
+        sigma = 0
+        for o in order[c[1]:c[2]]:
+            sigma += attribution[o]
+        if not sigma:
+            for o in order[c[1]:c[2]]:
+                attribution[o] = k+1
+    return attribution,reach,order,cluster,color

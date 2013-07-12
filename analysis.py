@@ -16,9 +16,9 @@ def cell_by_section(attribution,nb_sections):
     return cell_by_center
 
 
-def group_size_distrib(cellBySection,lonersBySection,nb_sections):
+def group_size_distrib(cellBySection,loners,nb_sections):
     g = [0] * (max(cellBySection)+1)
-    g[1] = sum(lonersBySection)
+    g[1] = loners
 
     for c in cellBySection:
         g[c] += c
