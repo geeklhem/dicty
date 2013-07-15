@@ -13,20 +13,23 @@ DICTy (Dictyostelium Images Clustering and Tracking for pYthon) is a tool to aut
 
 * Usage
 
-Usage:
-  run.py <file> [-a=<analysis>] [-o=<outputName>] [-p=<parameters>] [-f]
-  run.py [--help|-h|--version|--license]
+    *ran.py <file> [-a=<analysis>] [-o=<outputName>] [-p=<parameters>] [-f]*
+    
+    or
+    
+    *run.py [--help|-h|--version|--license]*
+
 
 Where <file> is a csv file containing for each particle : "area","x","y","frame".
 
-Options:
-  -a=<analysis>            Analysis to run [default: OpticsAnalysis]
-  -o=<outputName>          Export name [default: Same] (Same as data basename)
-  -p=<parameters>          Analysis parmeters in the format "p1=value;p2=value;p3=v"
-  -f                       Force overwrite
-  -h --help                Show this screen.
-  --version                Show version.
-  --license                Show license information.
+**** Options:
+    - /-a=<analysis>/            Analysis to run [default: OpticsAnalysis].
+    - /-o=<outputName>/          Export name [default: Same] (Same as data basename).
+    - /-p=<parameters>/          Analysis parmeters in the format "p1=value;p2=value;p3=v".
+    - /-f/                       Force overwrite
+    - /-h --help/                Show this screen.
+    - /--version/                Show version.
+    - /--license/                Show license information.
 
 To create new kind of analysis, create inherited class of those already defined in the experiment.py file.
 
