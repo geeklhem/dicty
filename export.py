@@ -35,9 +35,7 @@ class HtmlExport(object):
         try:
             os.mkdir(self.path)
         except OSError as ex:
-            if ex.errno == errno.EEXIST:
-                print("WARNING : Folder already exist")
-            else:
+            if ex.errno != errno.EEXIST:
                 raise
     def add_all_img(self,pattern):
         pics = ""
