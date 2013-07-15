@@ -7,24 +7,39 @@ DICTy (Dictyostelium Images Clustering and Tracking for pYthon) is a tool to aut
 * Features
 
 - Voronoi partition.
-- Particle clustering using OPTICS algorithm [fn:Ankerst].
+- Particle clustering using OPTICS algorithm [fn:Ankerst99].
 - Crowding and group size estimations.
 - HTML export.
 
-[fn:Ankerst] Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jörg Sander (1999). *OPTICS: Ordering Points To Identify the Clustering Structure*. /ACM SIGMOD international conference on Management of data/. ACM Press. pp. 49–60.
-
 * Usage
 
-Modify the run.py file examples to suit your needs.
+Usage:
+  run.py <file> [-a=<analysis>] [-o=<outputName>] [-p=<parameters>] [-f]
+  run.py [--help|-h|--version|--license]
+
+Where <file> is a csv file containing for each particle : "area","x","y","frame".
+
+Options:
+  -a=<analysis>            Analysis to run [default: OpticsAnalysis]
+  -o=<outputName>          Export name [default: Same] (Same as data basename)
+  -p=<parameters>          Analysis parmeters in the format "p1=value;p2=value;p3=v"
+  -f                       Force overwrite
+  -h --help                Show this screen.
+  --version                Show version.
+  --license                Show license information.
+
+To create new kind of analysis, create inherited class of those already defined in the experiment.py file.
 
 * Requirements 
 - Python 2.7
 - Numpy and Scipy
 - Matplotlib
-
+- Docopt
 * License
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+* Footnotes
+[fn:Ankerst99] Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jörg Sander (1999). *OPTICS: Ordering Points To Identify the Clustering Structure*. /ACM SIGMOD international conference on Management of data/. ACM Press. pp. 49–60.
