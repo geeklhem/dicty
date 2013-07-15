@@ -36,8 +36,3 @@ class Data(object):
             self.N.append(len(self.points[-1]))
         
         self.frame_nb = len(self.frame_names)
-
-    def density(self,precision=100):
-        """Compute the density of the particle and return a
-        frame_nb(precision*precsion) list of array"""
-        pass
