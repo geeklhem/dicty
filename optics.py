@@ -9,8 +9,9 @@ ACM Press. pp. 49–60."""
 import heapq
 import math
 import numpy as np
-import itertools 
-
+import itertools
+ 
+import geometry as geo
 
 
 def optics(points,eps,M=15):
@@ -31,7 +32,7 @@ def optics(points,eps,M=15):
         # for each unprocessed point p of DB
         if not processed[p]:
             # Get p neighbors (eps-radius)
-            N = get_neighbors(p, eps,points)
+            N = geo.get_neighbors(p, eps,points)
         
             # mark p as processed and output it to the ordered list
             processed[p] = 1
@@ -71,18 +72,16 @@ def core_dist(p,N,M,points):
     if len(N) < M:
         return None
     else:
-        dist = [d(points[p],points[n]) for n in N]
+        dist = [geo.d(points[p],points[n]) for n in N]
         dist.sort()
         return dist[M-1]
 
-def d(a,b):
-    return math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2)
 
 def update(N,p,seeds,eps,M,points,processed,reach):
     cd = core_dist(p,N,M,points)
     for n in N:
         if not processed[n]:
-            new_rd = max(cd,d(points[p],points[n]))
+            new_rd = max(cd,geo.d(points[p],points[n]))
             # If n is not in the priority queue
             if reach[n] == None:
                 reach[n] = new_rd
@@ -94,14 +93,6 @@ def update(N,p,seeds,eps,M,points,processed,reach):
                     seeds.add(n,new_rd) #update
                     
 
-
-def get_neighbors(p,eps,points):
-    ## O(n²) !!!!
-    neighbors = []
-    for k,q in enumerate(points):
-        if d(points[p],q) < eps:
-            neighbors.append(k)
-    return neighbors
 
 class PriorityQueue(object):
     """A priority queue inspired by http://docs.python.org/2/library/heapq.html"""

@@ -5,9 +5,7 @@
 import numpy as np
 import math
 
-class Cluster(object):
-    """A cluster"""
-    pass
+import geometry 
 
 def cluster_dict(clust,order,points):
     f = {}
@@ -19,87 +17,133 @@ def cluster_dict(clust,order,points):
     y = points[1,f["points_index"]]
     f["x_mean"] = sum(x)/f["N"]
     f["y_mean"] = sum(y)/f["N"]
+    f["centroid"] = (f["x_mean"],f["y_mean"])
     f["convex_hull"] = convex_hull(np.transpose(np.array(x,y)))
     return f
 
 
-def convex_hull(points):
-    """ Return a list of points forming the convex hull of
-    a set of points using Graham Scan algorithm."""
+def track_cluster(clusters_frame):
+    """ Return a list of list, giving the indices of the clusters
+    tracking[frame][cluster] = cluster index or None"""
+    tracking = []
+    nb_clust = len(cluster_frame[0])
+    # Each 
+    tracking.append([(None,i) for i in range(len(cluster_frame[0]))])
+    centroids = [c["centroid"] for c in clusters_frame[0]]
 
-    # Find the point with the lowest y-coordinate. 
-    ymin = min(points[1,:])
-    iymin = [i for i,j in enumerate(points[1,:]) if j==ymin]
-    
-    # If the lowest y-coordinate exist in more than one points in the set...
-    if len(iymin) > 1:
-        # ...take the point with the lowest x-coordinate out of the candidates.
-        ip = points[0,:].index(min(points[0,iymin]))
-    else:
-        ip = iymin[0]
+    #loop trhough frames startign at the second one
+    for f,clusters in enumerate(clusters_frame[1:]):
+        tracking.append([None]*nb_clust)
+        for index,clust in enumerate(clusters):
+            neighbors = geo.get_neighbors(clust["centroid"],
+                                          None,
+                                          centroids,
+                                          mx = 5)
+            clust["neighbors"] = []
+            for ni,dist in neighbors:
+                clip = geo.intersect_polygons(
+                    clusters_frame[f][ni]["convex_hull"],
+                    clust["convex_hull"])
+                area = geo.area(clip)
+                clust["neighbors"].append({"index":ni,
+                                           "distance":dist,
+                                           "inter_area":area})
+            clust["neighbors"].sort(key=lambda x:x["inter_area"])
+            if clust["neighbors"][0]["inter_area"] > 0:
+                prev_index = tracking[f].index(clust["neighbors"][0]["index"])
+                tracking[f+1].append(prev_index,index)
+            else:
+                tracking[f+1].append(None,index)
+                nb_clust += 1
+        centroids = [c["centroid"] for c in clusters]
 
-    p = (points[0,ip],points[1,ip])
-    # Order the set of points in increasing order of the angle they and the point P
-    # Make with the x-axis.
-    angles = [(math.acos((x-p[0])/d((x-p[0],y-p[1]),(0,0))),(x,y)) 
-              for x,y
-              in zip(points[0,:],points[1,:])]
-    angles.sort(key=lambda x:x[0])
-    print(p)
-    hull = [angles[0][1],angles[1][1]]
-    for a,xy in angles[2:]:
-        while len(hull)>=2 and cross_product(hull[-2],hull[-1],xy)<=0:
-            hull.pop()
-        hull.append(xy)
-    return np.array(hull),angles
+def traces(tracking):
+    nb_start = 0
+    traces = []
+    delete = []
+    for f,trk in enumerate(tracking):
+        for t in traces:
+            t.append([])
+        for old,new in trk:
+            if old == None:
+                nb_start += 1 
+                traces.append([])
+                for i in range(f):
+                    traces[-1].append([None])
+                traces[-1].append([new])
+            else:
+                for j,l in enumerate(last):
+                    if old in l:
+                        p_index = j
+                traces[p_index][f] += [new]
+
+        for j,fused in enumerate(traces):
+            if fused[-1] == []:
+                for r,fusion in enumerate(traces):
+                    if fusion[f-1] == fused[f-1] and fusion[f-1] != [] and j != r:
+                        # fusion the traces
+                        print("Fusion : {} with {}".format(fusion,fused))
+                        for k,v in enumerate(fused[:f-1]):
+                            fusion[k].extend(v)
+                            print("Add {} to {} (trace {})".format(v,fusion[k],k))
+                        fused[f-1] = [None]
+                        delete.append(j)
+        #print "Traces: {}".format(traces)
+        last = [t[-1] for t in traces] 
+        #print "Last: {}".format(last)
+    traces = [t for i,t in enumerate(traces) if i not in delete]
+    print(delete)
+    return traces
 
 
-def cross_product(p1,p2,p3):
-    """ Three points p1,p2 and p3 are a :
- 
-     - counter clockwise turn if cp > 0 
-     - clockwise turn if cp < 0
-     - colinear if cp = 0"""
-    cp1 = (p2[0]-p1[0])*(p3[1]-p1[1]) 
-    cp2 = (p2[1]-p1[1])*(p3[0]-p1[0]) 
-    return cp1-cp2
+fake_tracking = [[(None,1),(None,2),(None,3),(None,4),(None,5),(None,6),(None,7)],
+                 [(1,4),(2,2),(2,1),(4,3),(5,3),(None,5),(6,6),(7,6)],
+                 [(4,1),(2,2),(1,4),(3,3),(6,5),(6,6)],
+                 [(1,3),(4,2),(3,1)]]
+
+fake_clusters = [[{"N":90},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10}], 
+                 [{"N":10},{"N":10},{"N":100},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10}],
+                 [{"N":120},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10}],
+                 [{"N":10},{"N":10},{"N":110},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10}]] 
+
+# fake_traces = traces(fake_tracking) 
+# fake_tclust=traced_clusters_list(fake_traces,fake_clusters)
+# tree_trace(fake_tclust,fake_clusters)
+# plt.show()
+
+import colorsys
+import copy
+
+def traced_clusters_list(traces,clusters):
+    tclusters = []
+    current_color = [0,.4,1]
+    hue_step = .9/len(traces)
+    for it,trc in enumerate(traces):
+        dct = {
+            "cluster_by_frame":[],
+            "N_agg":[],
+            "primary_color":colorsys.hls_to_rgb(*current_color),
+            "cluster_indicies":trc
+        }
+        Nagg = 0
+        for f,frm in enumerate(trc):
+            color = copy.copy(current_color)
+            cbf = sum([1 for k in frm if k != None])
+            for c in frm:
+                if c != None:
+                    Nagg += clusters[f][c]["N"] 
+                    clusters[f][c]["color"] = colorsys.hls_to_rgb(*color)
+                    if len(frm) > 1:
+                        hue_small_step = 0.5*hue_step/(len(frm)-1)
+                        lum_step = 0.4/(len(frm)-1)
+                        color = [c+mod for c,mod in zip(color,[hue_small_step,lum_step,0])]
+
+            dct["cluster_by_frame"].append(cbf)
+            dct["N_agg"].append(Nagg)
+        current_color[0] += hue_step
+        tclusters.append(dct)
+    return tclusters
 
 
-def d(a,b):
-    return math.sqrt((a[0]-b[0])**2+(a[1]-b[1])**2)
 
 
-def intersect_polygons(clip,subject):
-    """Sutherland-Hodgman algorithm"""
-    output = subject
-    clipEdges = [(v1,v2) for v1,v2 in zip(clip[:-1],clip[1:])] + [(clip[-1],clip[0])]
-    for edge in clipEdges:
-        inpt = [(v1,v2) for v1,v2 in zip(output[:-1],output[1:])] + [(output[-1],output[0])] 
-        output = []
-        print("---------\n{}\n is cutted by  {}".format(inpt,edge))
-        for s,e in inpt:
-            if cross_product(edge[0],edge[1],e)<0:
-                if not cross_product(edge[0],edge[1],s)<0:
-                    output.append(intersection((s,e),edge))
-                output.append(e)
-            elif cross_product(edge[0],edge[1],s)<0:
-                output.append(intersection((s,e),edge))
-        print "{}\n-------------".format(output)
-    return output
-
-def intersection(a,b):
-    """return the intersection of two lines (a[0],a[1] and (b[0],b[1])"""
-    X = (a[0][0],a[1][0],b[0][0],b[1][0])
-    Y = (a[0][1],a[1][1],b[0][1],b[1][1])
-    
-    d = (X[0]-X[1]) * (Y[2]-Y[3]) - (Y[0]-Y[1]) * (X[2]-X[3])
-
-    x = (X[0]*Y[1] - Y[0]*X[1])*(X[2]-X[3]) - (X[0]-X[1])*(X[2]*Y[3]-Y[2]*X[3])
-    x /= d 
-
-    y = (X[0]*Y[1] - Y[0]*X[1])*(Y[2]-Y[3]) - (Y[0]-Y[1])*(X[2]*Y[3]-Y[2]*X[3])
-    y /= d 
-
-    return x,y
-
-pts = np.loadtxt("pts")

@@ -8,6 +8,7 @@ import data
 import group_detection
 import partitions
 import analysis
+import tracking
 
 
 class Experiment(object):
@@ -170,6 +171,7 @@ class OpticsAnalysis(Experiment):
         self.data.order = []
         self.data.clust = []
         self.data.distrib = []
+        self.data.clusters_dicts = []
 
         if not maf:
             maf = self.data.frame_nb
@@ -194,6 +196,20 @@ class OpticsAnalysis(Experiment):
                 self.data.groups[-1]["cbs"],
                 self.data.groups[-1]["loners"],
                 self.data.groups[-1]["N"]))
+            cdicts = [tracking.cluster_dict(c,order, self.data.points[f])
+                      for c in self.data.clust[-1]] 
+            self.data.clusters_dicts.append(cdicts)
+
+        print("Tracking...")
+        self.data.tracking = tracking.track_cluster(self.clusters_dicts): 
+        self.data.traces = tracking.traces(self.data.tracking) 
+        self.data.tclust = tracking.traced_clusters_list(self.data.traces,
+                                                         self.data.clusters_dicts)
+        self.data.colorlist = [] 
+        for f in range(mif,maf):
+            c_list = [cluster_dicts[a]["color"] for a in self.data.attribution[f]]
+            self.data.colorlist.append(c_list)
+        
 
         # EXPORT 
         print("Export")
@@ -203,6 +219,12 @@ class OpticsAnalysis(Experiment):
 
         self.output.add_title("Global")
         self.output.add_text("{} frames".format(self.data.frame_nb))
+
+        self.output.add_fig("tracking",
+                            visual.tree_trace,
+                            (self.data.tclust
+                             self.data.groups),
+                            proportions=(2*float(self.data.X)/float(self.data.Y),2))
 
         self.output.add_title("Frame by frame".format(f))
         for f in range(maf-mif):
@@ -218,7 +240,9 @@ class OpticsAnalysis(Experiment):
                             self.data.X,
                             self.data.Y,
                             self.data.groups[f],
-                            self.data.groups[f]["cbs"]),
+                            self.data.groups[f]["cbs"],
+                            self.data.colorlist[f],
+                            self.data.clusters_dicts[f]),
                            proportions=(2*float(self.data.X)/float(self.data.Y),2))
 
             self.output.add_fig("creach_{0}".format(f+mif+1),

@@ -23,14 +23,19 @@ def get_color():
        return itertools.cycle(colors)
 #       return itertools.cycle(['r', 'g', 'b', 'c', 'm', 'y', 'k'])
 
-def plot_particle(points,attribution,xlim,ylim,groups=None,cbs=None,show=True):
-    #Colors
-    color_iter = get_color()
-    if groups:
-        colors = [next(color_iter) for c in range(groups["N"])]
-    else:
-        colors = [next(color_iter) for c in range(max(attribution)+1)]
-    colorlist = [colors[i] for i in attribution]
+def plot_particle(points,
+                  attribution,
+                  xlim,ylim,
+                  groups=None,cbs=None,colorlist=None,
+                  clusters_dicts=None,
+                  show=True):
+    if colorlist = None:
+       color_iter = get_color()
+       if groups:
+           colors = [next(color_iter) for c in range(groups["N"])]
+       else:
+           colors = [next(color_iter) for c in range(max(attribution)+1)]
+       colorlist = [colors[i] for i in attribution]
 
     # Points
     plt.scatter(points[0,:],points[1,:],color=colorlist)
@@ -46,6 +51,9 @@ def plot_particle(points,attribution,xlim,ylim,groups=None,cbs=None,show=True):
        if cbs:
               for x,y,s in zip(groups["pos"][0,:],groups["pos"][1,:],cbs):
                      plt.text(x, y,"[{}]".format(s),alpha=0.5)
+    elif clusters_dicts:
+       for cd in clusters_dicts:
+              plot_polygon(cd["convex_hull"],cd["color"],show=False)
     # Axis details
     plt.xlim((0,xlim))
     plt.ylim((0,ylim))
@@ -169,3 +177,56 @@ def plot_path(pts,o,show=True):
         plt.show()
 
 
+def plot_polygon(polygon,color,alpha=0.3,show=True):
+    codes = [Path.MOVETO] + [Path.LINETO]*(len(polygon)-1)
+    path = Path(polygon, codes)
+    ax = plt.gca()
+    patch = patches.PathPatch(path, facecolor=color,alpha=alpha, lw=2)
+    ax.add_patch(patch)
+    if show:
+       ax.autoscale_view()
+       plt.show()
+
+
+def tree_trace(tclusters,clusters):
+    previous_y = 0
+    ax = plt.gca()
+    lim_x,lim_y = 0,0
+    maxn = float(max([max([c["N"] for c in f]) for f in clusters]))
+    minn = float(min([min([c["N"] for c in f]) for f in clusters]))
+    for it,tclust in enumerate(tclusters):
+        for f,frm in enumerate(tclust["cluster_indicies"]):
+            current_y = f * 20
+            current_x = 20*it
+            previous_x = [current_x,]
+            lim_x = max(current_x,lim_x)
+            lim_y = max(current_y,lim_y)
+            x_step = 20/(len(frm)+1.)
+            max_r = 0
+            for c in frm:
+                if c:
+                    n = clusters[f][c]["N"]
+                    r = 0.3*x_step+0.6*x_step*(n-minn)/maxn
+                    max_r = max(r,max_r)
+                    ax.add_artist(Circle(xy=(current_x,current_y),
+                                         radius=r,
+                                         facecolor=clusters[f][c]["color"],
+                                         alpha=0.5))
+                    plt.text(current_x,
+                             current_y,
+                             "{}".format(n),
+                             horizontalalignment='center',
+                             verticalalignment='center')
+                    #    if f > 0:
+                #         for px in previous_x:
+                #             plt.arrow(px,previous_y,
+                #                       current_x-px,current_y-max_r-previous_y,
+                #                       facecolor=clusters[f][c]["color"],
+                #                       width=x_step/10.,
+                #                       length_includes_head=True,
+                #                       alpha = 0.5)
+                # 
+                current_x += x_step
+                previous_y = current_y - max_r 
+    plt.xlim((-10,lim_x+10))
+    plt.ylim((-10,lim_y+10))
