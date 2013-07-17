@@ -224,10 +224,10 @@ class OpticsAnalysis(Experiment):
             print("{} in {}".format(f,len(self.data.attribution)))
             print("{} clust and max attr = {}".format(len(self.data.clusters_dicts[f]),
                                                       max(self.data.attribution[f])))
-            #c_list = [(0,0,0) for a in self.data.attribution[f]]
-            c_list = [self.data.clusters_dicts[f][a-3]["color"] 
-                      if a != 0 else (0,0,0)
-                      for a in self.data.attribution[f]]
+            c_list = [(0,0,0) for a in self.data.attribution[f]]
+            #c_list = [self.data.clusters_dicts[f][a-3]["color"] 
+            #          if a != 0 else (0,0,0)
+            #          for a in self.data.attribution[f]]
             self.data.colorlist.append(c_list)
         
 
