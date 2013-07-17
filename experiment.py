@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import os.path
+import pickle
+import copy
+
 import export
 import visual
 import data 
@@ -17,7 +20,9 @@ class Experiment(object):
         """Experiment constructor"""
 
         if name == "Same":
-            name = os.path.splitext(os.path.basename(datafile))[0]
+            self.name = os.path.splitext(os.path.basename(datafile))[0]
+        else:
+            self.name = name
 
         self.path = os.path.join("exports/",name+"/")
         self.savefile = os.path.join(self.path,name+".dicty")
@@ -37,18 +42,18 @@ class Experiment(object):
         self.output.export()
         self.save((self.output,self.data))
 
-        def load(self):
-            with open(self.savefile, 'rb') as fichier:
-                unpickler = pickle.Unpickler(fichier)
-                return unpickler.load()
-                
-        def save(self,s):
-            with open(self.savefile, 'wb') as fichier:
-                pickler = pickle.Pickler(fichier)
-                pickler.dump(s)
-    
-        def run(self,**options):
-            pass
+    def load(self):
+        with open(self.savefile, 'rb') as fichier:
+            unpickler = pickle.Unpickler(fichier)
+            return unpickler.load()
+
+    def save(self,s):
+        with open(self.savefile, 'wb') as fichier:
+            pickler = pickle.Pickler(fichier)
+            pickler.dump(s)
+
+    def run(self,**options):
+        pass
 
     
 class VoronoiAnalysis(Experiment):
@@ -172,6 +177,7 @@ class OpticsAnalysis(Experiment):
         self.data.clust = []
         self.data.distrib = []
         self.data.clusters_dicts = []
+        
 
         if not maf:
             maf = self.data.frame_nb
@@ -197,17 +203,31 @@ class OpticsAnalysis(Experiment):
                 self.data.groups[-1]["loners"],
                 self.data.groups[-1]["N"]))
             cdicts = [tracking.cluster_dict(c,order, self.data.points[f])
-                      for c in self.data.clust[-1]] 
+                      for c in self.data.clust[-1][0]] 
+            # cdicts_c = copy.deepcopy(cdicts)
+            
+            # crossed = [0] * len(self.data.points[f])
+            # for cld in cdicts_c:
+            #     if sum(crossed[cld["s"]:cld["e"]]) == 0:
+            #         crossed[cld["s"]:cld["e"]] = [1]*(cld["e"]-cld["s"])
+            #     else :
+            #         cdicts.remove(cld)
             self.data.clusters_dicts.append(cdicts)
 
         print("Tracking...")
-        self.data.tracking = tracking.track_cluster(self.clusters_dicts): 
+        self.data.tracking = tracking.track_cluster(self.data.clusters_dicts)
         self.data.traces = tracking.traces(self.data.tracking) 
         self.data.tclust = tracking.traced_clusters_list(self.data.traces,
                                                          self.data.clusters_dicts)
         self.data.colorlist = [] 
-        for f in range(mif,maf):
-            c_list = [cluster_dicts[a]["color"] for a in self.data.attribution[f]]
+        for f in range(maf-mif):
+            print("{} in {}".format(f,len(self.data.attribution)))
+            print("{} clust and max attr = {}".format(len(self.data.clusters_dicts[f]),
+                                                      max(self.data.attribution[f])))
+            #c_list = [(0,0,0) for a in self.data.attribution[f]]
+            c_list = [self.data.clusters_dicts[f][a-3]["color"] 
+                      if a != 0 else (0,0,0)
+                      for a in self.data.attribution[f]]
             self.data.colorlist.append(c_list)
         
 
@@ -222,8 +242,8 @@ class OpticsAnalysis(Experiment):
 
         self.output.add_fig("tracking",
                             visual.tree_trace,
-                            (self.data.tclust
-                             self.data.groups),
+                            (self.data.tclust,
+                             self.data.clusters_dicts),
                             proportions=(2*float(self.data.X)/float(self.data.Y),2))
 
         self.output.add_title("Frame by frame".format(f))
@@ -239,7 +259,7 @@ class OpticsAnalysis(Experiment):
                             self.data.attribution[f],
                             self.data.X,
                             self.data.Y,
-                            self.data.groups[f],
+                            None,
                             self.data.groups[f]["cbs"],
                             self.data.colorlist[f],
                             self.data.clusters_dicts[f]),

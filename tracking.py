@@ -5,12 +5,12 @@
 import numpy as np
 import math
 
-import geometry 
+import geometry as geo
 
 def cluster_dict(clust,order,points):
     f = {}
     f["s"],f["e"] = clust
-    f["N"] = self.e - self.s
+    f["N"] = f["e"] - f["s"]
     f["points_index"] = order[f["s"]:f["e"]]
 
     x = points[0,f["points_index"]]
@@ -18,7 +18,7 @@ def cluster_dict(clust,order,points):
     f["x_mean"] = sum(x)/f["N"]
     f["y_mean"] = sum(y)/f["N"]
     f["centroid"] = (f["x_mean"],f["y_mean"])
-    f["convex_hull"] = convex_hull(np.transpose(np.array(x,y)))
+    f["convex_hull"] = geo.convex_hull(np.array((x,y)))
     return f
 
 
@@ -26,21 +26,27 @@ def track_cluster(clusters_frame):
     """ Return a list of list, giving the indices of the clusters
     tracking[frame][cluster] = cluster index or None"""
     tracking = []
-    nb_clust = len(cluster_frame[0])
+    nb_clust = len(clusters_frame[0])
     # Each 
-    tracking.append([(None,i) for i in range(len(cluster_frame[0]))])
+    tracking.append([(None,i) for i in range(len(clusters_frame[0]))])
     centroids = [c["centroid"] for c in clusters_frame[0]]
 
-    #loop trhough frames startign at the second one
+    #loop through frames starting at the second one
     for f,clusters in enumerate(clusters_frame[1:]):
-        tracking.append([None]*nb_clust)
+        tracking.append([])
         for index,clust in enumerate(clusters):
-            neighbors = geo.get_neighbors(clust["centroid"],
+
+            # Get the nearest neighbors ordered by distance
+            neighbors = geo.get_neighbors(-1,
                                           None,
-                                          centroids,
-                                          mx = 5)
+                                          centroids+[clust["centroid"]],
+                                          mx = 3)
+            neighbors = neighbors[1:] #supress the first element (same point, dist =0)
             clust["neighbors"] = []
+
+            #print("clust {}".format(clust))
             for ni,dist in neighbors:
+                #print("index {} (dist {}) in {}".format(ni,dist,len(clusters_frame[f])))
                 clip = geo.intersect_polygons(
                     clusters_frame[f][ni]["convex_hull"],
                     clust["convex_hull"])
@@ -48,14 +54,26 @@ def track_cluster(clusters_frame):
                 clust["neighbors"].append({"index":ni,
                                            "distance":dist,
                                            "inter_area":area})
-            clust["neighbors"].sort(key=lambda x:x["inter_area"])
-            if clust["neighbors"][0]["inter_area"] > 0:
-                prev_index = tracking[f].index(clust["neighbors"][0]["index"])
-                tracking[f+1].append(prev_index,index)
+
+            #Order neihgbors by increasing overlap area
+            clust["neighbors"].sort(key=lambda x:-x["inter_area"])
+
+            # Take the most overlaping one (if there's an overlap).
+            if clust["neighbors"][0]["inter_area"] != 0:
+                #print "Tracking {} : {}".format(f,tracking[f])
+                prev_index_list = [x[1] for x in tracking[f]]
+                #print "Neigh : {}".format(clust["neighbors"])
+                #print "Index of {} in {} ".format(clust["neighbors"][0]["index"], prev_index_list)
+                
+                prev_index = prev_index_list.index(clust["neighbors"][0]["index"])
+                tracking[f+1].append((prev_index,index))
+            # Or just start a new trace
             else:
-                tracking[f+1].append(None,index)
-                nb_clust += 1
+                tracking[f+1].append((None,index))
+                #nb_clust += 1
+        # get the centroid of this frame for the treatment of the following frame
         centroids = [c["centroid"] for c in clusters]
+    return tracking
 
 def traces(tracking):
     nb_start = 0
@@ -81,18 +99,18 @@ def traces(tracking):
             if fused[-1] == []:
                 for r,fusion in enumerate(traces):
                     if fusion[f-1] == fused[f-1] and fusion[f-1] != [] and j != r:
-                        # fusion the traces
-                        print("Fusion : {} with {}".format(fusion,fused))
+                        # traces fusion
+                        #print("Fusion : {} with {}".format(fusion,fused))
                         for k,v in enumerate(fused[:f-1]):
                             fusion[k].extend(v)
-                            print("Add {} to {} (trace {})".format(v,fusion[k],k))
+                            #print("Add {} to {} (trace {})".format(v,fusion[k],k))
                         fused[f-1] = [None]
                         delete.append(j)
         #print "Traces: {}".format(traces)
         last = [t[-1] for t in traces] 
         #print "Last: {}".format(last)
     traces = [t for i,t in enumerate(traces) if i not in delete]
-    print(delete)
+    #print(delete)
     return traces
 
 

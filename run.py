@@ -66,3 +66,23 @@ if __name__ == "__main__":
     args = docopt.docopt(__doc__, version=__version__)
     main(args)
     
+
+fake_args = {'--help': False,
+             '--license': False,
+             '--version': False,
+             '-a': 'OpticsAnalysis',
+             '-f': True,
+             '-o': 'Same',
+             '-p': "mif=15,maf=18",
+             '<file>': "data/stack.csv"}
+    
+argtot = {'--help': False,
+             '--license': False,
+             '--version': False,
+             '-a': 'OpticsAnalysis',
+             '-f': True,
+             '-o': 'Same',
+             '-p': "",
+             '<file>': "data/stack.csv"}
+    
+

@@ -8,6 +8,7 @@ import math
 import itertools
 import numpy as np
 import optics as op
+import copy
 
 def voronoi(center,points):
     def d(a,b):
@@ -51,9 +52,24 @@ def optics_clust(points,eps=9000,M=15,ksi=0.001):
     pts = np.transpose(points)
     order,reach = op.optics(pts,eps,M)
     cluster,color = op.find_cluster(reach,ksi,M)
-    attribution = [0]*len(order)
+
     clust = [(e-s,s,e) for s,e in cluster]
     clust = sorted(clust, key=lambda x:x[0])
+    cluster_c = copy.deepcopy(cluster)
+
+    crossed = [0]*len(order)
+    for i,c in enumerate(cluster_c):
+        sigma = 0
+        for o in order[c[0]:c[1]]:
+            sigma += crossed[o]
+        if not sigma:
+            for o in order[c[0]:c[1]]:
+                crossed[o] = 1
+        else:
+            cluster.remove(c)
+            color.remove(color[i])
+
+    attribution = [0]*len(order)
     for k,c in enumerate(clust):
         sigma = 0
         for o in order[c[1]:c[2]]:
@@ -61,4 +77,6 @@ def optics_clust(points,eps=9000,M=15,ksi=0.001):
         if not sigma:
             for o in order[c[1]:c[2]]:
                 attribution[o] = k+1
+
+
     return attribution,reach,order,cluster,color

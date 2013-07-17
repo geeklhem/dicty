@@ -53,7 +53,7 @@ def optics(points,eps,M=15):
                         empty = True
                     else:                     
                         # Get q neighbors (eps-radius)
-                        N2 = get_neighbors(q,eps,points)
+                        N2 = geo.get_neighbors(q,eps,points)
 
                         # mark q as processed and output it to the ordered list
                         processed[q] = 1
@@ -159,8 +159,8 @@ def find_cluster(reach,ksi=0.001,M=5):
 
         ## If i is the start of a steep down area.
         if reach[i]*(1-ksi) > reach[i+1]:
-            print("STEEP DOWN starting in {}".format(i) +
-                  " ({} are opened)".format(len(steep_down_list)))
+            #print("STEEP DOWN starting in {}".format(i) +
+            #      " ({} are opened)".format(len(steep_down_list)))
             steep_down_list = update_and_filter(steep_down_list,reach,i,ksi,mib)
 
             sD = i   # start of current downward region.
@@ -180,7 +180,7 @@ def find_cluster(reach,ksi=0.001,M=5):
                     sigma += 1
                 i += 1
                 color[i] = "r"
-            print("Ending in {}\n".format(i))
+            #print("Ending in {}\n".format(i))
 
             eD = i   # end of current downward region.
             #Save the current downward area : [start,end,mib]
@@ -191,7 +191,7 @@ def find_cluster(reach,ksi=0.001,M=5):
 
         ##If i is the start of a steep up area.
         elif reach[i] < reach[i+1]*(1-ksi):
-            print("STEEP UP starting in {}".format(i))
+            #print("STEEP UP starting in {}".format(i))
             steep_down_list = update_and_filter(steep_down_list,reach,i,ksi,mib)
 
             sU = i  # start of current upward region.
@@ -211,7 +211,7 @@ def find_cluster(reach,ksi=0.001,M=5):
                     sigma += 1
                 i += 1
                 color[i] = "g"
-            print("Ending in {}\n".format(i))
+            #print("Ending in {}\n".format(i))
             
 
             eU = i #end of the current upward region.
@@ -223,14 +223,14 @@ def find_cluster(reach,ksi=0.001,M=5):
                 ## Compare the end pf the steep-up U area multiplied by (1-ksi)
                 ## with the mib value of the steep down area D thus satisfying 
                 ## the condition (sc2*).
-                print("Compare {} and local mib {}".format(reach[eU]*(1-ksi),D[2]))
+                #print("Compare {} and local mib {}".format(reach[eU]*(1-ksi),D[2]))
                 if reach[eU]*(1-ksi) !=  D[2]:
                     s,e = compute_cluster((sU,eU),D,reach,ksi)
-                    print("Cluster possible in [{},{}] ({})\n".format(s,e,nc))
+                    #print("Cluster possible in [{},{}] ({})\n".format(s,e,nc))
                     nc += 1
                     if cluster_cond(s,e,reach,M,ksi):
                         clusters.append((s,e))
-                        print("Cluster confirmed\n")
+                        #print("Cluster confirmed\n")
         else:
             i += 1
     return clusters, color

@@ -11,7 +11,7 @@ def get_neighbors(p,eps,points,mx=0):
     ## O(n²) !!!!
     if eps == None:
         eps = float("inf")
-
+    distances = []
     neighbors = []
     for k,q in enumerate(points):
         dist =  d(points[p],q)
@@ -20,7 +20,7 @@ def get_neighbors(p,eps,points,mx=0):
             if mx:
                 distances.append(dist)
     if mx:
-        zipped = zip(neighbors,dist)
+        zipped = zip(neighbors,distances)
         zipped.sort(key=lambda x:x[1])
         return zipped[0:mx]
     else:
@@ -29,7 +29,6 @@ def get_neighbors(p,eps,points,mx=0):
 def convex_hull(points):
     """ Return a list of points forming the convex hull of
     a set of points using Graham Scan algorithm."""
-
     # Find the point with the lowest y-coordinate. 
     ymin = min(points[1,:])
     iymin = [i for i,j in enumerate(points[1,:]) if j==ymin]
@@ -48,13 +47,14 @@ def convex_hull(points):
               for x,y
               in zip(points[0,:],points[1,:])]
     angles.sort(key=lambda x:x[0])
-    print(p)
+    #print(p)
     hull = [angles[0][1],angles[1][1]]
     for a,xy in angles[2:]:
         while len(hull)>=2 and cross_product(hull[-2],hull[-1],xy)<=0:
             hull.pop()
         hull.append(xy)
-    return np.array(hull),angles
+    # print hull
+    return hull
 
 
 def cross_product(p1,p2,p3):
@@ -75,6 +75,7 @@ def d(a,b):
 
 def intersect_polygons(clip,subject):
     """Sutherland-Hodgman algorithm"""
+    #print("Intersect {} with {}".format(clip,subject))
     # Put the vertices in the right order
     def right_order(polygon):
         if cross_product(polygon[0],polygon[1],polygon[2]) > 0:
@@ -92,15 +93,20 @@ def intersect_polygons(clip,subject):
     output = subject
     clipEdges = [(v1,v2) for v1,v2 in zip(clip[:-1],clip[1:])] + [(clip[-1],clip[0])]
     for edge in clipEdges:
+        # print output
         inpt = [(v1,v2) for v1,v2 in zip(output[:-1],output[1:])] + [(output[-1],output[0])] 
         output = []
         for s,e in inpt:
+            #     print cross_product(edge[0],edge[1],e)
+            #     print cross_product(edge[0],edge[1],s)
             if cross_product(edge[0],edge[1],e)<0:
                 if not cross_product(edge[0],edge[1],s)<0:
                     output.append(intersection((s,e),edge))
                 output.append(e)
             elif cross_product(edge[0],edge[1],s)<0:
                 output.append(intersection((s,e),edge))
+        if output == []:
+            break
     return output
 
 def intersection(a,b):

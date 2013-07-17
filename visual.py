@@ -29,7 +29,7 @@ def plot_particle(points,
                   groups=None,cbs=None,colorlist=None,
                   clusters_dicts=None,
                   show=True):
-    if colorlist = None:
+    if colorlist == None:
        color_iter = get_color()
        if groups:
            colors = [next(color_iter) for c in range(groups["N"])]
@@ -188,10 +188,11 @@ def plot_polygon(polygon,color,alpha=0.3,show=True):
        plt.show()
 
 
-def tree_trace(tclusters,clusters):
+def tree_trace(tclusters,clusters,show=True):
     previous_y = 0
     ax = plt.gca()
     lim_x,lim_y = 0,0
+    #print clusters
     maxn = float(max([max([c["N"] for c in f]) for f in clusters]))
     minn = float(min([min([c["N"] for c in f]) for f in clusters]))
     for it,tclust in enumerate(tclusters):
@@ -230,3 +231,5 @@ def tree_trace(tclusters,clusters):
                 previous_y = current_y - max_r 
     plt.xlim((-10,lim_x+10))
     plt.ylim((-10,lim_y+10))
+    if show:
+           plt.show()
