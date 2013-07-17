@@ -33,14 +33,17 @@ class Experiment(object):
             self.output = export.HtmlExport(name)
             self.data = data.Data(datafile)
             self.run(**options)
+            self.step = "Loading"
+            self.save((self.output,self.data,self.step))
         else:
             print("Loading")
-            self.output,self.data = self.load()
-        
+            self.output,self.data,self.step = self.load()
+            print("Data loaded, the file was saved at step {}".self.step)
 
         # Run analysis, export result and save the object.
         self.output.export()
-        self.save((self.output,self.data))
+        self.step = "End"
+        self.save((self.output,self.data,self.step))
 
     def load(self):
         with open(self.savefile, 'rb') as fichier:
@@ -55,184 +58,76 @@ class Experiment(object):
     def run(self,**options):
         pass
 
-    
-class VoronoiAnalysis(Experiment):
-    """A voronoi analysis of the data"""
-    def run(self,mf=None):
-    # Load data and create export
-        self.data.groups = group_detection.from_file("data/centers35.csv")
-        self.data.attribution = []
-        self.data.cbs = []
-        self.data.distrib = []
-        self.data.corr_cbs_ls = []
-        self.data.corr_cl_ls = []
-
-        self.data.attr_loners = (partitions.voronoi(self.data.groups["pos"],
-                                                     self.data.points[-1]))
-        self.data.loners = analysis.cell_by_section(self.data.attr_loners,
-                                                     self.data.groups["N"])
-
-        if not mf:
-            mf = self.data.frame_nb
-
-        # ANALYSIS
-        for f in range(mf):
-            self.data.attribution.append(partitions.voronoi(self.data.groups["pos"],
-                                                             self.data.points[f]))
-            self.data.cbs.append(analysis.cell_by_section(self.data.attribution[f],
-                                                           self.data.groups["N"]))
-            self.data.distrib.append(analysis.group_size_distrib(self.data.cbs[f],
-                                                                  self.data.loners,
-                                                                  self.data.groups["N"]))
-            self.data.corr_cbs_ls.append(analysis.lin_correlate(self.data.cbs[f],
-                                                                 self.data.groups["area"]))
-            self.data.corr_cl_ls.append(analysis.lin_correlate(self.data.cbs[f],
-                                                                self.data.loners))
-
-
-
-
-        self.data.cc_cbs_ls = [c["corrcoef"] for c in self.data.corr_cbs_ls]
-        self.data.cc_cl_ls = [c["corrcoef"] for c in self.data.corr_cl_ls]
-
-
-        # EXPORT 
-        self.output.add_text("Analysis of a film")
-
-
-        self.output.add_title("Global")
-        self.output.add_text("{} frames".format(self.data.frame_nb))
-
-        self.output.add_fig("cbsls",
-                       visual.time,(self.data.cc_cbs_ls,"Correlation",1))
-
-        self.output.add_fig("clls",
-                       visual.time,(self.data.cc_cl_ls,"Correlation",1))
-
-        self.output.add_fig("cbs",
-                       visual.areaplot,(self.data.cbs,),
-                       proportions=(3,1))
-
-
-        self.output.add_title("Frame by frame".format(f))
-        for f in range(mf):
-            self.output.add_title("Frame {0}".format(f),3)
-            self.output.add_fig("particle_{0}".format(f),
-                           visual.plot_particle,(self.data.points[f],
-                                                 self.data.attribution[f],
-                                                 self.data.X,
-                                                 self.data.Y,
-                                                 self.data.groups,
-                                                 self.data.cbs[f],
-                                             ),
-                           proportions=(2*float(self.data.X)/float(self.data.Y),2))
-
-            self.output.add_fig("distrib_{0}".format(f),
-                           visual.distrib,(self.data.distrib[f]["crowding"],))
-
-            self.output.add_fig("cbs_corr_{0}".format(f),
-                           visual.correlation,(self.data.cbs[f],
-                                               self.data.groups["area"],                 
-                                               self.data.corr_cbs_ls[f]["regline"],
-                                               "Cell by section",
-                                               "Group Area"))
-
-
-            self.output.add_fig("cl_corr_{0}".format(f),
-                           visual.correlation,(self.data.cbs[f],
-                                               self.data.loners,                 
-                                               self.data.corr_cl_ls[f]["regline"],
-                                               "Cell by section",
-                                               "Loners by sections"))
-
-            self.output.add_text("""
-            <strong>Mean crowding</strong> :   {0[mean_crowding]},
-            <strong>Mean group size</strong> : {0[mean_gs]} 
-            """.format(self.data.distrib[f]))
-
-            self.output.add_text("""
-            <strong>Linear Correlation : </strong> 
-            Group Area =
-            {0[a]} Cell by section + {0[b]} 
-            <strong> Correlation coefficient :</strong> {0[corrcoef]} 
-            <strong> Mean square error :</strong>  {0[mse]}) 
-            """.format(self.data.corr_cbs_ls[f]))
-
-            self.output.add_text("""
-            <strong>Linear Correlation : </strong> 
-            Loners by section =
-            {0[a]} Cell by section + {0[b]} 
-            <strong> Correlation coefficient :</strong> {0[corrcoef]}
-            <strong> Mean square error</strong>  : {0[mse]}) 
-            """.format(self.data.corr_cl_ls[f]))
-
   
 class OpticsAnalysis(Experiment):
     def run(self,mif=0,maf=None,M=15):
-        # Load data and create export
-        self.data.attribution = []
-        self.data.reach = []
-        self.data.groups = []
-        self.data.order = []
-        self.data.clust = []
-        self.data.distrib = []
-        self.data.clusters_dicts = []
-        
-
+    
         if not maf:
             maf = self.data.frame_nb
 
         print("Analysis...")
+        self.analysis(mif,maf,M)
+        self.step = "Analysis"
+        self.save((self.output,self.data,self.step))
+        
+        print("Tracking...")
+        self.tracking()
+        self.step = "Tracking"
+        self.save((self.output,self.data,self.step))
+
+        print("Export...")
+        self.export()
+        self.step = "Export"
+        self.save((self.output,self.data,self.step))
+
+
+    def analysis(self,mif,maf,M):
+        self.data.attribution = []
+        self.data.reach = []
+        self.data.order = []
+        self.data.clusters = []
+        self.data.distrib = []
+        self.data.frame_info = []
+        self.data.reach_color = []
+
+        print("Analysis...")
         # ANALYSIS
         for f in range(mif,maf):
-            print("{}/{}".format(f+1,maf))
-            attr,reach,order,cluster,color = partitions.optics_clust(self.data.points[f],
-                                                                     eps=9000,
-                                                                     ksi=0.001,
-                                                                     M=M)
-            self.data.reach.append(reach)
-            self.data.order.append(order)
-            self.data.attribution.append(attr)
-            self.data.groups.append(group_detection.from_attribution(
-                self.data.points[f],
-                attr,
-                loners_index=0))
-            self.data.clust.append((cluster,color))
+            print("Frame : {}/{}".format(f+1,maf))
+            partition = partitions.optics_clust(self.data.points[f],
+                                                eps=9000,
+                                                ksi=0.001,
+                                                M=M)
+            self.data.frame_info.append({
+                "loners":partition["loners"],
+                "N":len(self.data.points[f]),})
+
+            self.data.reach.append(partition["reach"])
+            self.data.order.append(partition["order"])
+            self.data.attribution.append(partition["attribution"])
+            self.data.clusters.append(partition["clusters"])
+            self.data.reach_color.append(partition["color_histo"])
+
             self.data.distrib.append(analysis.group_size_distrib(
-                self.data.groups[-1]["cbs"],
-                self.data.groups[-1]["loners"],
-                self.data.groups[-1]["N"]))
-            cdicts = [tracking.cluster_dict(c,order, self.data.points[f])
-                      for c in self.data.clust[-1][0]] 
-            # cdicts_c = copy.deepcopy(cdicts)
-            
-            # crossed = [0] * len(self.data.points[f])
-            # for cld in cdicts_c:
-            #     if sum(crossed[cld["s"]:cld["e"]]) == 0:
-            #         crossed[cld["s"]:cld["e"]] = [1]*(cld["e"]-cld["s"])
-            #     else :
-            #         cdicts.remove(cld)
-            self.data.clusters_dicts.append(cdicts)
+                [c["N"] for c in partition["clusters"]],
+                self.data.frame_info[-1]["loners"],
+                self.data.frame_info[-1]["N"]))
 
+
+    def tracking(self):
         print("Tracking...")
-        self.data.tracking = tracking.track_cluster(self.data.clusters_dicts)
-        self.data.traces = tracking.traces(self.data.tracking) 
-        self.data.tclust = tracking.traced_clusters_list(self.data.traces,
-                                                         self.data.clusters_dicts)
-        self.data.colorlist = [] 
-        for f in range(maf-mif):
-            print("{} in {}".format(f,len(self.data.attribution)))
-            print("{} clust and max attr = {}".format(len(self.data.clusters_dicts[f]),
-                                                      max(self.data.attribution[f])))
-            c_list = [(0,0,0) for a in self.data.attribution[f]]
-            #c_list = [self.data.clusters_dicts[f][a-3]["color"] 
-            #          if a != 0 else (0,0,0)
-            #          for a in self.data.attribution[f]]
-            self.data.colorlist.append(c_list)
+        # Find the ancestor of each cluster.
+        self.data.tracking = tracking.track_cluster(self.data.clusters)
         
+        # Reconstruct the traces
+        self.data.traces = tracking.traces(self.data.tracking) 
+        
+        # Get the index of the tracked clusters
+        self.data.tclust = tracking.traced_clusters_list(self.data.traces,
+                                                         self.data.clusters)
 
+    def export(self):
         # EXPORT 
-        print("Export")
         self.output.add_text("Analysis of {}".format(self.name))
         self.output.add_text("<strong>Clustering algorithm</strong> : Optics")
         self.output.add_text("<strong>Parameters</strong> : M = {}".format(M))
@@ -243,33 +138,62 @@ class OpticsAnalysis(Experiment):
         self.output.add_fig("tracking",
                             visual.tree_trace,
                             (self.data.tclust,
-                             self.data.clusters_dicts),
-                            proportions=(2*float(self.data.X)/float(self.data.Y),2))
+                             self.data.clusters),
+                            proportions=(10,5))
+
+        self.output.add_fig("Particles",
+                            visual.time,
+                            ([f["N"] for f in self.data.frame_info],
+                             "Particles"),
+                            proportions=(4,2))
+
+        self.output.add_fig("Loners",
+                            visual.time,
+                            ([f["N"] for f in self.data.frame_info],
+                             "Loners"),
+                            proportions=(4,2))
+
+        self.output.add_fig("Clusters",
+                            visual.time,
+                            ([len(f) for f in self.data.clusters],
+                             "Clusters"),
+                            proportions=(4,2))
+
+        self.output.add_fig("Mean group size",
+                            visual.time,
+                            ([f["mean_gs"] for f in self.data.distrib],
+                             "Mean group size"),
+                            proportions=(4,2))
+
+        self.output.add_fig("Mean crowding",
+                            visual.time,
+                            ([f["mean_crowding"] for f in self.data.distrib],
+                             "Mean crowding"),
+                            proportions=(4,2))
+
 
         self.output.add_title("Frame by frame".format(f))
+
         for f in range(maf-mif):
-            print("{}/{}".format(f+mif+1,maf))
+            print("Frame {}/{}".format(f+mif+1,maf))
             self.output.add_title("Frame {0}".format(f+mif+1),3)
             self.output.add_text("{} clusters, {} Loners detected".format(
-                self.data.groups[f]["N"],
-                self.data.groups[f]["loners"]))
+                self.data.frame_info[f]["N"],
+                self.data.frame_info[f]["loners"]))
             self.output.add_fig("particle_{0}".format(f+mif+1),
                            visual.plot_particle,
                            (self.data.points[f+mif],
                             self.data.attribution[f],
                             self.data.X,
                             self.data.Y,
-                            None,
-                            self.data.groups[f]["cbs"],
-                            self.data.colorlist[f],
-                            self.data.clusters_dicts[f]),
+                            self.data.clusters[f]),
                            proportions=(2*float(self.data.X)/float(self.data.Y),2))
 
             self.output.add_fig("creach_{0}".format(f+mif+1),
                            visual.plot_clust,
                            (self.data.reach[f],
-                            self.data.clust[f][1],
-                            self.data.clust[f][0]),
+                            self.data.reach_color[f],
+                            self.data.clusters[f]),
                            proportions=(2*float(self.data.X)/float(self.data.Y),2))
 
             self.output.add_fig("distrib_{0}".format(f),

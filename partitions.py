@@ -9,6 +9,7 @@ import itertools
 import numpy as np
 import optics as op
 import copy
+import geometry as geo
 
 def voronoi(center,points):
     def d(a,b):
@@ -48,35 +49,45 @@ def optics_th(points,threshold,eps=9000,M=15):
             attr[o] = c
     return attr,reach,order
 
-def optics_clust(points,eps=9000,M=15,ksi=0.001):
+def optics_clust(points,eps=9000,M=15,ksi=0.001,method="threshold"):
     pts = np.transpose(points)
     order,reach = op.optics(pts,eps,M)
-    cluster,color = op.find_cluster(reach,ksi,M)
+    
+    if methods == "ksistep":
+        clusters,color_histo = [cluster_dict(c,order, points[f])
+                                for c 
+                                in op.find_cluster(reach,ksi,M)]
 
-    clust = [(e-s,s,e) for s,e in cluster]
-    clust = sorted(clust, key=lambda x:x[0])
-    cluster_c = copy.deepcopy(cluster)
+    elif methods == "threshold":
+        clusters,color_histo = [cluster_dict(c,order, points[f])
+                                for c 
+                                in op.find_cluster_threshold(reach,M=M)]
+    else:
+        raise NameError
 
-    crossed = [0]*len(order)
-    for i,c in enumerate(cluster_c):
-        sigma = 0
-        for o in order[c[0]:c[1]]:
-            sigma += crossed[o]
-        if not sigma:
-            for o in order[c[0]:c[1]]:
-                crossed[o] = 1
-        else:
-            cluster.remove(c)
-            color.remove(color[i])
+    attribution = [None]*len(points)
+    for k,c in enumerate(clusters):
+        for o in order[c["s"]:c["e"]]:
+            attribution[o] = k
+    loners = sum([1 for a in attribution if a!=None])
 
-    attribution = [0]*len(order)
-    for k,c in enumerate(clust):
-        sigma = 0
-        for o in order[c[1]:c[2]]:
-            sigma += attribution[o]
-        if not sigma:
-            for o in order[c[1]:c[2]]:
-                attribution[o] = k+1
+    return {"attribution":attribution,
+            "reach": reach,
+            "order":order,
+            "clusters":clusters,
+            "loners":loners,
+            "color_histo":color_histo}
 
+def cluster_dict(clust,order,points):
+    f = {}
+    f["s"],f["e"] = clust
+    f["N"] = f["e"] - f["s"]
+    f["points_index"] = order[f["s"]:f["e"]]
 
-    return attribution,reach,order,cluster,color
+    x = points[0,f["points_index"]]
+    y = points[1,f["points_index"]]
+    f["x_mean"] = sum(x)/f["N"]
+    f["y_mean"] = sum(y)/f["N"]
+    f["centroid"] = (f["x_mean"],f["y_mean"])
+    f["convex_hull"] = geo.convex_hull(np.array((x,y)))
+    return f

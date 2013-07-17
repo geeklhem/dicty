@@ -286,3 +286,23 @@ def test(pts):
     except:
         print("Error in pclust")
     return o,r,c
+
+
+def find_cluster_threshold(reach,threshold=None,M=5):
+    color = ["k"] * len(reach)
+    if threshold == None:
+        threshold = max(reach)/3.
+    clusters = []
+    s = 0
+    e = 0
+    for k,r,rm1 in zip(reach[1:],reach[:-1]):
+        if s and not e:
+            color[k] = "b"
+        if r > threshold and rm1 < threshold:
+            e = k-1
+            clusters.append(s,e)
+            s = 0
+            e = 0
+        else if r < threshold and rm1 > threshold:
+            s = k-1
+    return clusters, color

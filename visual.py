@@ -26,34 +26,20 @@ def get_color():
 def plot_particle(points,
                   attribution,
                   xlim,ylim,
-                  groups=None,cbs=None,colorlist=None,
-                  clusters_dicts=None,
+                  clusters,
                   show=True):
-    if colorlist == None:
-       color_iter = get_color()
-       if groups:
-           colors = [next(color_iter) for c in range(groups["N"])]
-       else:
-           colors = [next(color_iter) for c in range(max(attribution)+1)]
-       colorlist = [colors[i] for i in attribution]
+
+    colorlist = [clusters[a]["color"] if a != None else "k" for a in attribution]
 
     # Points
     plt.scatter(points[0,:],points[1,:],color=colorlist)
-       
-    if groups:
-       # Groups
-       ax = plt.gca()
-       for x,y,c,s in zip(groups["pos"][0,:],groups["pos"][1,:],colors,groups["area"]):
-              ax.add_artist(Circle(xy=(x,y),
-                                 radius=math.sqrt(s/math.pi),
-                                 facecolor=c,
-                                 alpha=0.3))
-       if cbs:
-              for x,y,s in zip(groups["pos"][0,:],groups["pos"][1,:],cbs):
-                     plt.text(x, y,"[{}]".format(s),alpha=0.5)
-    elif clusters_dicts:
-       for cd in clusters_dicts:
-              plot_polygon(cd["convex_hull"],cd["color"],show=False)
+    
+    for cluster in clusters:
+              plot_polygon(cluster["convex_hull"],cluster["color"],show=False)
+              plt.text(cluster["x_mean"], cluster["y_mean"],
+                       "[{}]".format(cluster["N"]),
+                       alpha=0.5,
+                       horizontalalignment='center', verticalalignment='center')
     # Axis details
     plt.xlim((0,xlim))
     plt.ylim((0,ylim))
@@ -120,10 +106,10 @@ def optics_reachability(reach, show=True):
 
 def plot_clust(r,co,cl,show=True):
     plt.bar(range(len(r)),r,color=co,edgecolor=co); 
-    clust = [(e-s,s,e) for s,e in cl]
+    clust = [(c["N"],c["s"],c["e"]) for c in cl]
     clust = sorted(clust, key=lambda x:x[0])
     ystep = 700./len(clust)
-    y = 0
+    y = -10
     crossed = [0] * len(r)
     line_breack=False
     for l,s,e in clust:

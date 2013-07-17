@@ -7,20 +7,6 @@ import math
 
 import geometry as geo
 
-def cluster_dict(clust,order,points):
-    f = {}
-    f["s"],f["e"] = clust
-    f["N"] = f["e"] - f["s"]
-    f["points_index"] = order[f["s"]:f["e"]]
-
-    x = points[0,f["points_index"]]
-    y = points[1,f["points_index"]]
-    f["x_mean"] = sum(x)/f["N"]
-    f["y_mean"] = sum(y)/f["N"]
-    f["centroid"] = (f["x_mean"],f["y_mean"])
-    f["convex_hull"] = geo.convex_hull(np.array((x,y)))
-    return f
-
 
 def track_cluster(clusters_frame):
     """ Return a list of list, giving the indices of the clusters
