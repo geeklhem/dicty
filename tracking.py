@@ -33,19 +33,20 @@ def track_cluster(clusters_frame):
             #print("clust {}".format(clust))
             for ni,dist in neighbors:
                 #print("index {} (dist {}) in {}".format(ni,dist,len(clusters_frame[f])))
+                #print("-----\n{}".format(clust))
                 clip = geo.intersect_polygons(
                     clusters_frame[f][ni]["convex_hull"],
-                    clust["convex_hull"])
+                    clust["convex_hull"] )
                 area = geo.area(clip)
                 clust["neighbors"].append({"index":ni,
                                            "distance":dist,
                                            "inter_area":area})
-
+            
             #Order neihgbors by increasing overlap area
             clust["neighbors"].sort(key=lambda x:-x["inter_area"])
 
             # Take the most overlaping one (if there's an overlap).
-            if clust["neighbors"][0]["inter_area"] != 0:
+            if len(clust["neighbors"]) and clust["neighbors"][0]["inter_area"] != 0:
                 #print "Tracking {} : {}".format(f,tracking[f])
                 prev_index_list = [x[1] for x in tracking[f]]
                 #print "Neigh : {}".format(clust["neighbors"])
@@ -56,7 +57,7 @@ def track_cluster(clusters_frame):
             # Or just start a new trace
             else:
                 tracking[f+1].append((None,index))
-                #nb_clust += 1
+                
         # get the centroid of this frame for the treatment of the following frame
         centroids = [c["centroid"] for c in clusters]
     return tracking

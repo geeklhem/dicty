@@ -72,7 +72,7 @@ fake_args = {'--help': False,
              '--version': False,
              '-a': 'OpticsAnalysis',
              '-f': True,
-             '-o': 'Same',
+             '-o': 'slice',
              '-p': "mif=15,maf=18",
              '<file>': "data/stack.csv"}
     
@@ -80,8 +80,8 @@ argtot = {'--help': False,
              '--license': False,
              '--version': False,
              '-a': 'OpticsAnalysis',
-             '-f': True,
-             '-o': 'Same',
+             '-f': False,
+             '-o': 'thres',
              '-p': "",
              '<file>': "data/stack.csv"}
     

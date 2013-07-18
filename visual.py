@@ -67,7 +67,8 @@ def time(x,name="value",xlim=None,show=True):
        plt.show()
 
 def distrib(x,show=True):
-    plt.plot(x)
+    #x = []
+    plt.bar(range(len(x)),x)
     ax = plt.gca()
     ax.set_ylabel("Distribution")
     ax.set_xlabel("Group size")
@@ -75,7 +76,7 @@ def distrib(x,show=True):
        plt.show()
        
 
-def areaplot(cbc,show=True):
+def areaplot(clusters,show=True):
        #Colors
        color_iter = get_color()
        
@@ -108,7 +109,7 @@ def plot_clust(r,co,cl,show=True):
     plt.bar(range(len(r)),r,color=co,edgecolor=co); 
     clust = [(c["N"],c["s"],c["e"]) for c in cl]
     clust = sorted(clust, key=lambda x:x[0])
-    ystep = 700./len(clust)
+    ystep = 700./(len(clust)+1)
     y = -10
     crossed = [0] * len(r)
     line_breack=False
@@ -179,8 +180,8 @@ def tree_trace(tclusters,clusters,show=True):
     ax = plt.gca()
     lim_x,lim_y = 0,0
     #print clusters
-    maxn = float(max([max([c["N"] for c in f]) for f in clusters]))
-    minn = float(min([min([c["N"] for c in f]) for f in clusters]))
+    maxn = float(max([max([c["N"] for c in f]+[0]) for f in clusters]))
+    minn = float(min([min([c["N"] for c in f]+[0]) for f in clusters]))
     for it,tclust in enumerate(tclusters):
         for f,frm in enumerate(tclust["cluster_indicies"]):
             current_y = f * 20

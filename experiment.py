@@ -12,7 +12,7 @@ import group_detection
 import partitions
 import analysis
 import tracking
-
+import traceback
 
 class Experiment(object):
     """A run of this software"""
@@ -29,17 +29,17 @@ class Experiment(object):
 
         # Write if file doesn't exist, overwrite if force option enabled.
         if not os.path.isfile(self.savefile) or force:
-            print("Creating new file")
+            print("Creating new file...")
             self.output = export.HtmlExport(name)
             self.data = data.Data(datafile)
-            self.run(**options)
             self.step = "Loading"
             self.save((self.output,self.data,self.step))
         else:
             print("Loading")
             self.output,self.data,self.step = self.load()
-            print("Data loaded, the file was saved at step {}".self.step)
+            print("Data loaded, the file was saved at step {}".format(self.step))
 
+        self.run(**options)
         # Run analysis, export result and save the object.
         self.output.export()
         self.step = "End"
@@ -67,20 +67,38 @@ class OpticsAnalysis(Experiment):
         if not maf:
             maf = self.data.frame_nb
 
-        print("Analysis...")
-        self.analysis(mif,maf,M)
-        self.step = "Analysis"
-        self.save((self.output,self.data,self.step))
-        
-        print("Tracking...")
-        self.tracking()
-        self.step = "Tracking"
-        self.save((self.output,self.data,self.step))
+        try:
+            if self.step == "Loading":
+                print("Analysis...")
+                self.analysis(mif,maf,M)
+        except Exception:
+            print("ERROR: Error in analysis")
+            traceback.print_exc()
+        else:
+            self.step = "Analysis"
+            self.save((self.output,self.data,self.step))
 
-        print("Export...")
-        self.export(mif,maf)
-        self.step = "Export"
-        self.save((self.output,self.data,self.step))
+        try:
+            if self.step == "Analysis":
+                print("Tracking...")
+                self.tracking()
+        except Exception:
+            print("ERROR: Error in tracking")
+            traceback.print_exc()
+        else:
+            self.step = "Tracking"
+            self.save((self.output,self.data,self.step))
+
+        try:
+            if self.step == "Tracking":
+                print("Export...")
+                self.export(mif,maf)
+        except Exception:
+            print("ERROR: Error in export")
+            traceback.print_exc()
+        else:
+            self.step = "Export"
+            self.save((self.output,self.data,self.step))
 
 
     def analysis(self,mif,maf,M):
@@ -102,7 +120,7 @@ class OpticsAnalysis(Experiment):
                                                 M=M)
             self.data.frame_info.append({
                 "loners":partition["loners"],
-                "N":len(self.data.points[f]),})
+                "N":len(self.data.points[f][0:][0]),})
 
             self.data.reach.append(partition["reach"])
             self.data.order.append(partition["order"])
@@ -129,6 +147,7 @@ class OpticsAnalysis(Experiment):
                                                          self.data.clusters)
 
     def export(self,mif,maf):
+        self.output.elements = []
         # EXPORT 
         self.output.add_text("Analysis of {}".format(self.name))
         self.output.add_text("<strong>Clustering algorithm</strong> : Optics")
@@ -147,13 +166,13 @@ class OpticsAnalysis(Experiment):
                             visual.time,
                             ([f["N"] for f in self.data.frame_info],
                              "Particles"),
-                            proportions=(4,2))
+                            proportions=(2,1))
 
         self.output.add_fig("Loners",
                             visual.time,
-                            ([f["N"] for f in self.data.frame_info],
+                            ([f["loners"] for f in self.data.frame_info],
                              "Loners"),
-                            proportions=(4,2))
+                            proportions=(2,1))
 
         self.output.add_fig("Clusters",
                             visual.time,

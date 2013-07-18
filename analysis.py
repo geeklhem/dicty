@@ -17,19 +17,25 @@ def cell_by_section(attribution,nb_sections):
 
 
 def group_size_distrib(cellBySection,loners,nb_sections):
-    g = [0] * (max(cellBySection)+1)
-    g[1] = loners
+    if cellBySection == []:
+        return {"group_size_distrib":[0]*5,
+                "crowding":[0]*5,
+                "mean_gs":1,
+                'mean_crowding':1}
+    else:
+        g = [0] * (max(cellBySection)+1)
+        g[1] = loners
 
-    for c in cellBySection:
-        g[c] += c
-    gs = [float(i)/float(n) if n
-          else 0
-          for n,i in enumerate(g)]
+        for c in cellBySection:
+            g[c] += c
+            gs = [float(i)/float(n) if n
+                  else 0
+                  for n,i in enumerate(g)]
 
-    return {"group_size_distrib":gs,
-            "crowding":g,
-            "mean_gs":np.mean(gs),
-            'mean_crowding':np.mean(g)}
+        return {"group_size_distrib":gs,
+                "crowding":g,
+                "mean_gs":np.mean(gs),
+                'mean_crowding':np.mean(g)}
 
 
 def lin_correlate(x,y):
