@@ -62,6 +62,8 @@ class Experiment(object):
 class OpticsAnalysis(Experiment):
     def run(self,mif=0,maf=None,M=15):
     
+        self.M = M 
+
         if not maf:
             maf = self.data.frame_nb
 
@@ -76,7 +78,7 @@ class OpticsAnalysis(Experiment):
         self.save((self.output,self.data,self.step))
 
         print("Export...")
-        self.export()
+        self.export(mif,maf)
         self.step = "Export"
         self.save((self.output,self.data,self.step))
 
@@ -90,7 +92,7 @@ class OpticsAnalysis(Experiment):
         self.data.frame_info = []
         self.data.reach_color = []
 
-        print("Analysis...")
+
         # ANALYSIS
         for f in range(mif,maf):
             print("Frame : {}/{}".format(f+1,maf))
@@ -115,7 +117,7 @@ class OpticsAnalysis(Experiment):
 
 
     def tracking(self):
-        print("Tracking...")
+
         # Find the ancestor of each cluster.
         self.data.tracking = tracking.track_cluster(self.data.clusters)
         
@@ -126,11 +128,11 @@ class OpticsAnalysis(Experiment):
         self.data.tclust = tracking.traced_clusters_list(self.data.traces,
                                                          self.data.clusters)
 
-    def export(self):
+    def export(self,mif,maf):
         # EXPORT 
         self.output.add_text("Analysis of {}".format(self.name))
         self.output.add_text("<strong>Clustering algorithm</strong> : Optics")
-        self.output.add_text("<strong>Parameters</strong> : M = {}".format(M))
+        self.output.add_text("<strong>Parameters</strong> : M = {}".format(self.M))
 
         self.output.add_title("Global")
         self.output.add_text("{} frames".format(self.data.frame_nb))

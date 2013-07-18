@@ -135,5 +135,5 @@ def area(polygon):
     for i,j in zip(polygon,polygon[-1:]+polygon[0:-1]):
         area += (j[0]+i[0]) * (j[1]-i[1])
     return abs(float(area/2))
-pts = np.loadtxt("pts")
+#pts = np.loadtxt("pts")
 

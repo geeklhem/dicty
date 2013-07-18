@@ -53,21 +53,23 @@ def optics_clust(points,eps=9000,M=15,ksi=0.001,method="threshold"):
     pts = np.transpose(points)
     order,reach = op.optics(pts,eps,M)
     
-    if methods == "ksistep":
-        clusters,color_histo = [cluster_dict(c,order, points[f])
-                                for c 
-                                in op.find_cluster(reach,ksi,M)]
-
-    elif methods == "threshold":
-        clusters,color_histo = [cluster_dict(c,order, points[f])
-                                for c 
-                                in op.find_cluster_threshold(reach,M=M)]
+    
+    if method == "ksistep":
+        clust_tuples,color_histo = op.find_cluster(reach,ksi,M)    
+    elif method == "threshold":
+        clust_tuples,color_histo = op.find_cluster_threshold(reach,M=M)
     else:
         raise NameError
 
-    attribution = [None]*len(points)
+    clusters = [cluster_dict(c,order, points)
+                                for c 
+                                in clust_tuples]
+
+
+    attribution = [None]*len(pts)
     for k,c in enumerate(clusters):
         for o in order[c["s"]:c["e"]]:
+            #print("attributions:{}, o:{}".format(len(attribution),o))
             attribution[o] = k
     loners = sum([1 for a in attribution if a!=None])
 

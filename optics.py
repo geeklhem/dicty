@@ -291,18 +291,19 @@ def test(pts):
 def find_cluster_threshold(reach,threshold=None,M=5):
     color = ["k"] * len(reach)
     if threshold == None:
-        threshold = max(reach)/3.
+        threshold = (max(reach)-min(reach))/10. + min(reach)
     clusters = []
-    s = 0
-    e = 0
-    for k,r,rm1 in zip(reach[1:],reach[:-1]):
+    s = None
+    e = None
+    for k,(r,rm1) in enumerate(zip(reach[1:],reach[:-1])):
         if s and not e:
             color[k] = "b"
-        if r > threshold and rm1 < threshold:
+        if r > threshold and rm1 < threshold and s != None:
             e = k-1
-            clusters.append(s,e)
-            s = 0
-            e = 0
-        else if r < threshold and rm1 > threshold:
+            clusters.append((s,e))
+            s = None
+            e = None
+        elif r < threshold and rm1 > threshold:
             s = k-1
+    print(clusters)
     return clusters, color
