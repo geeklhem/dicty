@@ -45,43 +45,9 @@ class HtmlExport(object):
             background-color:#FFFFFF;
         }
         </style>
-        <script language="JavaScript">
-        <!-- Begin
-        NewImg = new Array (
-        "images/01.jpg",
-        "images/02.jpg",
-        "images/03.jpg"
-        );
-        var ImgNum = 0;
-        var ImgLength = NewImg.length - 1;
-        //Time delay between Slides in milliseconds
-        var delay = 3000;
-        var lock = false;
-        var run;
-        function chgImg(direction) {
-        if (document.images) {
-        ImgNum = ImgNum + direction;
-        if (ImgNum > ImgLength) {
-        ImgNum = 0;
-        }
-        if (ImgNum < 0) {
-        ImgNum = ImgLength;
-        }
-        document.slideshow.src = NewImg[ImgNum];
-           }
-        }
-        function auto() {
-        if (lock == true) {
-        lock = false;
-        window.clearInterval(run);
-        }
-        else if (lock == false) {
-        lock = true;
-        run = setInterval("chgImg(1)", delay);
-          }
-        }
-        //  End -->
-        </script>
+
+        <slideshow_script_placeholder>
+
         </head><body>
         <h1>Experimental picture analysis</h1>
         """
@@ -128,18 +94,70 @@ class HtmlExport(object):
         """.format(path=name+'.png',name=graphical_function.__name__))
 
     def add_slideshow(self,name):
-        i = self.elements.index("<slideshow>")
-        html = """<div id="slide-show">
-        <ul id="slide-images">"""
-        images = []
-        for k,f in enumerate(sorted(glob.glob(self.path+name+"*.png"))):
-            images.append("""
-            <li>
-            <img src="{filename}" alt="slideshow frame {n}"/>
-            </li>""".format(filename=os.path.basename(f),n=k))
+        try:
+            i = self.elements.index("<slideshow>")
+        except ValueError:
+            i = -1
+            self.elements.append("")
         
-        html += " ".join(images) + "</ul></div>"
+        images = []
+        imgOne = None
+        for k,f in enumerate(sorted(glob.glob(os.path.join(self.path,name+"*.png")))):
+            if not imgOne:
+                imgOne = os.path.basename(f)
+            images.append('"{}"'.format(os.path.basename(f)))
+        
+
+        script = """ <script language="JavaScript">
+
+        <!-- Begin
+        NewImg = new Array (
+        {}
+        );
+        var ImgNum = 0;
+        var ImgLength = NewImg.length - 1;
+        //Time delay between Slides in milliseconds
+        var delay = 3000;
+        var lock = false;
+        var run;
+        function chgImg(direction) {{
+        if (document.images) {{
+        ImgNum = ImgNum + direction;
+        if (ImgNum > ImgLength) {{
+        ImgNum = 0;
+        }}
+        if (ImgNum < 0) {{
+        ImgNum = ImgLength;
+        }}
+        document.slideshow.src = NewImg[ImgNum];
+           }}
+        }}
+        function auto() {{
+        if (lock == true) {{
+        lock = false;
+        window.clearInterval(run);
+        }}
+        else if (lock == false) {{
+        lock = true;
+        run = setInterval("chgImg(1)", delay);
+          }}
+        }}
+        //  End -->
+        </script> 
+        """.format(','.join(images))
+        self.header = self.header.replace("<slideshow_script_placeholder>",script)  
+
+    
+        ctrl = """  
+        <a href="javascript:chgImg(-1)">Previous</a>
+        <a href="javascript:auto()">Auto</a>
+        <a href="javascript:chgImg(1)">Next</a></div>
+        """
+
+        html = '<img src="{}" name="slideshow"/>'.format(imgOne) + ctrl
         self.elements[i] = html 
+        return html
+
     def export(self):
         page = self.header + "".join(self.elements) + self.footer
         with open(os.path.join(self.path,"index.html"), 'w') as f:

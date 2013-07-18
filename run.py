@@ -47,11 +47,13 @@ def main(args):
         for p in custom_p:
             p = p.split("=")
             try:
-                p[1] = ast.literal_eval(p[1])
+                evaluated = ast.literal_eval(p[1])
             except:
-                print("Error in parsing {0} argument".format(p[0]))
-            else:
+                print("Error in evaluting {0} argument. Value set to".format(p[0],p[1]))
                 param[p[0]]=p[1]
+            else:
+                param[p[0]]=evaluated
+    print param
     
     ExperimentClass = getattr(experiment,args["-a"])
     
@@ -82,7 +84,7 @@ argtot = {'--help': False,
              '-a': 'OpticsAnalysis',
              '-f': False,
              '-o': 'thres',
-             '-p': "",
+             '-p': 'method="ksistep",ksi=0.1',
              '<file>': "data/stack.csv"}
     
 

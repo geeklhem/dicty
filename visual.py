@@ -168,7 +168,7 @@ def plot_polygon(polygon,color,alpha=0.3,show=True):
     codes = [Path.MOVETO] + [Path.LINETO]*(len(polygon)-1)
     path = Path(polygon, codes)
     ax = plt.gca()
-    patch = patches.PathPatch(path, facecolor=color,edgecolor=None,alpha=alpha, lw=2)
+    patch = patches.PathPatch(path, facecolor=color,edgecolor='none',alpha=alpha, lw=2)
     ax.add_patch(patch)
     if show:
        ax.autoscale_view()
