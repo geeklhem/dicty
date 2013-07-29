@@ -321,7 +321,7 @@ def find_clusters_sander(reach,ratio=0.80,M=5):
     for i,r in enumerate(reach):
         if i>0:
             if (r >= max(reach[max(0,i-M):i]) 
-                or r >= max(reach[i:min(i+M,len(reach))])):
+                and r >= max(reach[i:min(i+M,len(reach))])):
                 P.append((i,r))
                 color[i] = "r"
     P.sort(key=lambda x:-x[1]) 
@@ -329,7 +329,7 @@ def find_clusters_sander(reach,ratio=0.80,M=5):
 
     ## STEP TWO : Process the list and build the cluster tree ##
     T = {"childs":[],
-         "s":0,"e":len(reach)+1,
+         "s":0,"e":len(reach),
          "N":len(reach),
          "parent":None,"i":1,"depth":0,
          "leaf":False}
@@ -367,8 +367,8 @@ def cluster_tree(N,P,ratio,reach,M,clusters):
     
     # N1 = p in N["points"] | p is left of s in the reachability plot 
     N1 = {"s":N["s"],
-          "e":s[0]-1,
-          "N":s[0]-1- N["s"],
+          "e":s[0],
+          "N":s[0]-N["s"],
           "childs":[],
           "leaf":False}
     # N2 = p in N["points"] | p is right of s in the reachability plot  
@@ -442,3 +442,16 @@ def cluster_tree(N,P,ratio,reach,M,clusters):
         # RECURSIVITY !
         for (Ni,Li) in NL:
             cluster_tree(Ni,Li,ratio,reach,M,clusters)
+
+
+def compute_ofs(reach,M):
+    of = [0]*len(reach)
+    lrd =  [0]*len(reach)
+    for o,r in enumerate(reach):
+        if o >1 :
+            lrd[o] = 1/sum([r for r in reach[max(0,o-M):o]])/float(max(M,o))
+    #print lrd                  
+    for o,r in enumerate(reach):
+        if o > 1:
+            of[o] = sum([x/lrd[o] for x in lrd[max(0,o-M):o] if x != None])/float(max(M,o))
+    return of
