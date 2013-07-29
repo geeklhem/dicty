@@ -26,13 +26,12 @@ def optics(points,eps,M=15):
     reach = [None] *  nb_points
     processed = [0] * nb_points
     
-
     for p in range(nb_points):
        
         # for each unprocessed point p of DB
         if not processed[p]:
             # Get p neighbors (eps-radius)
-            N = geo.get_neighbors(p, eps,points)
+            N = geo.get_neighbors(p,eps,points)
         
             # mark p as processed and output it to the ordered list
             processed[p] = 1
@@ -306,3 +305,140 @@ def find_cluster_threshold(reach,threshold=None,M=5):
         elif r < threshold and rm1 > threshold:
             s = k-1
     return clusters, color
+
+
+def find_clusters_sander(reach,ratio=0.80,M=5):
+    """ Extract cluster from the reachability distance plot 
+    using the method described in Sander et al. 2003 : 
+    Automatic Extraction of Clusters from Hierarchical Clustering Representations"""
+    
+
+
+    color = ["k"] * len(reach)
+
+    ## STEP ONE : Get an ordered list of locals maxima ##
+    P = []
+    for i,r in enumerate(reach):
+        if i>0:
+            if (r >= max(reach[max(0,i-M):i]) 
+                or r >= max(reach[i:min(i+M,len(reach))])):
+                P.append((i,r))
+                color[i] = "r"
+    P.sort(key=lambda x:-x[1]) 
+
+
+    ## STEP TWO : Process the list and build the cluster tree ##
+    T = {"childs":[],
+         "s":0,"e":len(reach)+1,
+         "N":len(reach),
+         "parent":None,"i":1,"depth":0,
+         "leaf":False}
+    clusters = [T]
+    
+    cluster_tree(T,P,ratio,reach,M,clusters)
+
+    return clusters, color
+
+def cluster_tree(N,P,ratio,reach,M,clusters):
+    """
+    Recursively construct the cluster tree.  
+    :param N: current node; the root of the tree in the first call.
+    :type N: dict
+    :param P: Local maxima points, sorted in descending order of reachability
+    :type P: list
+    """
+    
+    #    print("Current node is now {} and span from {} to {}".format(N["i"],
+    #                                                                   N["s"],
+    #                                                                   N["e"]))
+            
+
+    # Terminal recursion
+    if len(P) == 0:
+        N["leaf"] = True
+        return None 
+    
+    # take the next largest local maximum point as a possible separation between clusters
+    N["split_point"] = P[0]
+    s = P[0] 
+    P.pop(0)
+
+    # STEP ONE : Two new nodes are created.
+    
+    # N1 = p in N["points"] | p is left of s in the reachability plot 
+    N1 = {"s":N["s"],
+          "e":s[0]-1,
+          "N":s[0]-1- N["s"],
+          "childs":[],
+          "leaf":False}
+    # N2 = p in N["points"] | p is right of s in the reachability plot  
+    N2 = {"s":s[0]+1,
+          "e":N["e"],
+          "N":N["e"]-s[0]-1,
+          "childs":[],      
+          "leaf":False}
+    L1 =  [p for p in P if p[0]<s[0]] #p in L | p lies to the left of s in the reachability plot
+    L2 =  [p for p in P if p[0]>s[0]] #p in L | p lies to the right of s in the reachability plot
+    NL = [(N1,L1),(N2,L2)]
+
+    points_N1 = reach[N1["s"]:N1["e"]]
+    points_N2 = reach[N2["s"]:N2["e"]]
+
+    if N1["N"] > M:
+        N1["mean_r"] = sum(points_N1)/float(len(points_N1))
+        N1["sd"] = math.sqrt((float(1)/(N1["N"]-1)) 
+                             * sum([(p-N1["mean_r"])**2 for p in points_N1]))
+    else :
+        N1["mean_r"] = 0
+
+    if N2["N"] > M:
+        N2["mean_r"] = sum(points_N2)/float(len(points_N2))
+        N2["sd"] = math.sqrt((float(1)/(N2["N"]-1)) 
+                             * sum([(p-N2["mean_r"])**2 for p in points_N2]))
+    else: 
+        N2["mean_r"] = 0
+
+    # STEP TWO : Is the new separation significant 
+    if (N1["mean_r"]/s[1] > ratio) and (N2["mean_r"]/s[1] > ratio):
+    #if split point s is not significant, ignore s and continue
+        return cluster_tree(N,P,ratio,reach,M,clusters)
+
+    # STEP THREE : Does the nodes are large enough ?
+    else:
+        if N1["N"] < M:
+            NL.pop(0)
+        if N2["N"] < M:
+            NL.pop(-1)
+        if len(NL) == 0:
+            N["leaf"] = True
+            return None #Parent_of_N is a leaf.
+
+        # STEP FOUR : Add the nodes to the tree
+        # check if the nodes can be moved up one level = if the current node is within one
+        # standard deviation of the parent's value. 
+        if (N["parent"] != None 
+            and N["parent"]["parent"] != None
+            and abs((s[1]-N["parent"]["mean_r"])/N["parent"]["sd"]) < 1) :
+            # Adds the NLs to the parent node.
+            for Ni,Li in NL:
+                Ni["parent"] = N["parent"]
+                Ni["i"] = len(clusters)+1
+                Ni["depth"] = N["depth"]
+
+                N["parent"]["childs"].append(Ni)
+                clusters.append(Ni)
+
+
+        else:
+            # Adds the NLs to the current node
+            for Ni,Li in NL:
+                Ni["parent"] = N
+                Ni["i"] = len(clusters)+1            
+                Ni["depth"] = N["depth"] +1
+
+                N["childs"].append(Ni)
+                clusters.append(Ni)
+
+        # RECURSIVITY !
+        for (Ni,Li) in NL:
+            cluster_tree(Ni,Li,ratio,reach,M,clusters)

@@ -67,8 +67,11 @@ def time(x,name="value",xlim=None,show=True):
        plt.show()
 
 def distrib(x,show=True):
-    #x = []
-    plt.bar(range(len(x)),x)
+    binned_x = [0] * ((len(x)/5)+1) 
+    for i, xi in enumerate(x):
+       binned_x[i/5] += xi
+    y = [5*k for k in range(len(binned_x))]
+    plt.bar(y,binned_x,width=5)
     ax = plt.gca()
     ax.set_ylabel("Distribution")
     ax.set_xlabel("Group size")
@@ -106,24 +109,62 @@ def optics_reachability(reach, show=True):
 
 
 def plot_clust(r,co,cl,show=True):
-    plt.bar(range(len(r)),r,color=co,edgecolor=co); 
-    clust = [(c["N"],c["s"],c["e"]) for c in cl]
-    clust = sorted(clust, key=lambda x:x[0])
-    ystep = 700./(len(clust)+1)
+
+
+
+    if "depth" in cl[0].keys():
+           manual_y = True
+           ystep = 700./(max([c["depth"] for c in cl])) 
+           fcolor = ["k"]*len(co)
+           for c in cl:
+              if "color" in c.keys():
+                     for k in range(c["s"],c["e"]):
+                            fcolor[k] = c["color"]
+           ecolor = co
+    else:
+           clust = [(c["N"],c["s"],c["e"]) for c in cl]
+           manual_y = False
+           clust = sorted(clust, key=lambda x:x[0])
+           ystep = 700./(len(clust)+1)
+           fcolor = co
+           ecolor = co
+   
     y = -10
-    crossed = [0] * len(r)
-    line_breack=False
-    for l,s,e in clust:
-       for x in range(max(0,s-3),min(e+3,len(r))):
-              if not crossed[x]:
-                     crossed[x] = 1
-              else:
-                     line_breack = True
-                     crossed = [0] * len(r)
-       if line_breack:
-              y = y-ystep
-              line_breack=False
-       plt.hlines(xmin=s,xmax=e,y=y, linewidth=1)
+    ymax = max(r)
+
+    plt.bar(range(len(r)),r,color=fcolor,edgecolor=ecolor);
+    
+    if not manual_y:
+       crossed = [0] * len(r)
+       line_breack=False
+       for l,s,e in clust:
+              for x in range(max(0,s-3),min(e+3,len(r))):
+                     if not crossed[x]:
+                            crossed[x] = 1
+                     else:
+                            line_breack = True
+                            crossed = [0] * len(r)
+              if line_breack:
+                     y = y-ystep
+                     line_breack=False
+              plt.hlines(xmin=s,xmax=e,y=y, linewidth=1)
+    else:
+           for c in cl:
+                  if c["leaf"]:
+                         col_line = c["color"]
+                  else:
+                         col_line = "k"
+                  plt.hlines(xmin=c["s"],xmax=c["e"],
+                             y=-(c["depth"]+1)*ystep,
+                             linewidth=1,color=col_line)
+              
+                  plt.text((c["e"]+c["s"])/2.0, (-(c["depth"]+1.5)*ystep),
+                           "[{}]".format(c["N"]),
+                           alpha=0.5,
+                           color=col_line,
+                           horizontalalignment='center', verticalalignment='center')
+    # Axis det
+    
     if show:
            plt.show()
 

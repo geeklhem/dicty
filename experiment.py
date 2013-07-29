@@ -108,7 +108,7 @@ class OpticsAnalysis(Experiment):
         self.data.distrib = []
         self.data.frame_info = []
         self.data.reach_color = []
-
+        self.data.all_clusters= []
 
         # ANALYSIS
         for f in range(mif,maf):
@@ -125,11 +125,12 @@ class OpticsAnalysis(Experiment):
             self.data.reach.append(partition["reach"])
             self.data.order.append(partition["order"])
             self.data.attribution.append(partition["attribution"])
-            self.data.clusters.append(partition["clusters"])
+            self.data.clusters.append([c for c in partition["clusters"] if c["leaf"]])
             self.data.reach_color.append(partition["color_histo"])
+            self.data.all_clusters.append(partition["clusters"])
 
             self.data.distrib.append(analysis.group_size_distrib(
-                [c["N"] for c in partition["clusters"]],
+                [c["N"] for c in self.data.clusters[-1]],
                 self.data.frame_info[-1]["loners"],
                 self.data.frame_info[-1]["N"]))
 
@@ -217,7 +218,7 @@ class OpticsAnalysis(Experiment):
                            visual.plot_clust,
                            (self.data.reach[f],
                             self.data.reach_color[f],
-                            self.data.clusters[f]),
+                            self.data.all_clusters[f]),
                            proportions=(2*float(self.data.X)/float(self.data.Y),2))
 
             self.output.add_fig("distrib_{0:02}".format(f+mif+1),

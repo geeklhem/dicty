@@ -56,22 +56,35 @@ def optics_clust(points,eps=9000,M=15,ksi=0.001,method="threshold"):
     
     if method == "ksistep":
         clust_tuples,color_histo = op.find_cluster(reach,ksi,M)    
+        clusters = [cluster_dict(c,order, points)
+                    for c 
+                    in clust_tuples]
+
+
+
     elif method == "threshold":
         clust_tuples,color_histo = op.find_cluster_threshold(reach,M=M)
+        clusters = [cluster_dict(c,order, points)
+                    for c 
+                    in clust_tuples]
+
+
+    elif method == "sander":
+        clust,color_histo = op.find_clusters_sander(reach,ratio=0.75,M=M)
+        clusters = [cluster_dict((c["s"],c["e"]),order,points,c)
+                    for c 
+                    in clust]
+
     else:
         raise NameError
 
-    clusters = [cluster_dict(c,order, points)
-                                for c 
-                                in clust_tuples]
-
 
     attribution = [None]*len(pts)
-    for k,c in enumerate(clusters):
+    for k,c in enumerate([cl for cl in clusters if cl["leaf"]]):
         for o in order[c["s"]:c["e"]]:
             #print("attributions:{}, o:{}".format(len(attribution),o))
             attribution[o] = k
-    loners = sum([1 for a in attribution if a!=None])
+    loners = sum([1 for a in attribution if a==None])
 
     return {"attribution":attribution,
             "reach": reach,
@@ -80,16 +93,13 @@ def optics_clust(points,eps=9000,M=15,ksi=0.001,method="threshold"):
             "loners":loners,
             "color_histo":color_histo}
 
-def cluster_dict(clust,order,points):
-    f = {}
-    f["s"],f["e"] = clust
-    f["N"] = f["e"] - f["s"]
-    f["points_index"] = order[f["s"]:f["e"]]
-
-    x = points[0,f["points_index"]]
-    y = points[1,f["points_index"]]
-    f["x_mean"] = sum(x)/f["N"]
-    f["y_mean"] = sum(y)/f["N"]
-    f["centroid"] = (f["x_mean"],f["y_mean"])
-    f["convex_hull"] = geo.convex_hull(np.array((x,y)))
+def cluster_dict(clust_tuple,order,points,f={}):
+    if "leaf" in f.keys() and f["leaf"]:
+        f["points_index"] = order[f["s"]:f["e"]]
+        x = points[0,f["points_index"]]
+        y = points[1,f["points_index"]]
+        f["x_mean"] = sum(x)/f["N"]
+        f["y_mean"] = sum(y)/f["N"]
+        f["centroid"] = (f["x_mean"],f["y_mean"])
+        f["convex_hull"] = geo.convex_hull(np.array((x,y)))
     return f
