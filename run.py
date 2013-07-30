@@ -74,7 +74,7 @@ fake_args = {'--help': False,
              '-a': 'OpticsAnalysis',
              '-f': True,
              '-o': 'slice',
-             '-p': "mif=15,maf=18,method=sander,M=15",
+             '-p': "mif=15,maf=17,method=sander,M=15",
              '<file>': "data/stack.csv"}
     
 argtot = {'--help': False,

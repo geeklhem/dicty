@@ -109,6 +109,7 @@ class OpticsAnalysis(Experiment):
         self.data.frame_info = []
         self.data.reach_color = []
         self.data.all_clusters= []
+        self.data.ofs = []
 
         # ANALYSIS
         for f in range(mif,maf):
@@ -124,6 +125,7 @@ class OpticsAnalysis(Experiment):
 
             self.data.reach.append(partition["reach"])
             self.data.order.append(partition["order"])
+            self.data.ofs.append(partition["ofs"])
             self.data.attribution.append(partition["attribution"])
             self.data.clusters.append([c for c in partition["clusters"] if c["leaf"]])
             self.data.reach_color.append(partition["color_histo"])

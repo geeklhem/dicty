@@ -17,14 +17,16 @@ def get_neighbors(p,eps,points,mx=0):
         dist =  d(points[p],q)
         if dist < eps:
             neighbors.append(k)
-            if mx:
-                distances.append(dist)
+            distances.append(dist)
     if mx:
         zipped = zip(neighbors,distances)
         zipped.sort(key=lambda x:x[1])
         return zipped[0:mx]
     else:
-        return neighbors
+        zipped = zip(neighbors,distances)
+        zipped.sort(key=lambda x:x[1])
+        neighbors,distances = zip(*zipped) 
+        return(neighbors)
 
 def convex_hull(points):
     """ Return a list of points forming the convex hull of

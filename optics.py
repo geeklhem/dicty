@@ -19,13 +19,25 @@ def optics(points,eps,M=15):
     :param points:
     :param eps:
     :param M:
+
+    Output a dict containing :
+    - order : List of n int. order[k] gives the position
+    in the original array of the k-th point visited during the 
+    walk.
+    - reach: List of n float. Smallest reachability distance   
+    with respect to a point on the left of k in the walk's order.
+    - ofs: List of n float. Outliner factor. The OF is the  
+    average of the ratios of the local reachability distance
+    (lrds) of the M nearest neighbors and the one of k. 
     """
+
     nb_points = len(points)
     o = 0
     order = [0] * nb_points
     reach = [None] *  nb_points
     processed = [0] * nb_points
-    
+    lrd = [None] * nb_points
+       
     for p in range(nb_points):
        
         # for each unprocessed point p of DB
@@ -36,6 +48,7 @@ def optics(points,eps,M=15):
             # mark p as processed and output it to the ordered list
             processed[p] = 1
             order[o]=p
+            lrd[o] = compute_lrd(p,N,M,points)
             o += 1
 
             # Seeds = empty priority queue
@@ -57,14 +70,17 @@ def optics(points,eps,M=15):
                         # mark q as processed and output it to the ordered list
                         processed[q] = 1
                         order[o]=q
+                        lrd[o] = compute_lrd(q,N2,M,points)
                         o += 1  
 
                         #if (core-distance(q, eps, Minpts) != UNDEFINED)
                         if core_dist(q,N2,M,points) != None:
                             update(N2,q,seeds,eps,M,points,processed,reach)
 
+
+    ofs = compute_ofs(lrd,order)
     reach = [reach[o] if reach[o] != None else 0 for o in order]
-    return order,reach
+    return {"order":order,"reach":reach,"ofs":ofs}
 
 def core_dist(p,N,M,points):
     """Return the list of the distance to the M nearest points"""
@@ -90,11 +106,52 @@ def update(N,p,seeds,eps,M,points,processed,reach):
                 if new_rd < reach[n]:
                     reach[n] = new_rd
                     seeds.add(n,new_rd) #update
-                    
 
+
+#~~~~~~~~~~
+# OPTICS-OF
+#~~~~~~~~~~
+
+def compute_lrd(p,N,M,points):
+    """Compute the local reachability distance of p
+    Which is the inverse of the average reachability distance
+    between p and its M nearest neighbors"""
+    rd = [0] * M
+    cd = core_dist(p,N,M,points)
+    neighM = N[:M]
+
+    for k,n in enumerate(neighM):
+        rd[k] = max(cd,
+                    geo.d(points[p],points[n]))
+    lrd =  1/(sum(rd)/float(len(rd)))
+    return [lrd,neighM]
+
+def compute_ofs(lrd,order):
+    """ Compute the outlier factor of all points.
+    The OF is the average of the ratios of the local
+    reachability distance (lrds) of the M nearest neighbors
+    and the one of p.
+    It captures the degree of "outlierness" of p."""
+    ofs = [None] * len(order)
+    
+    for j,l in enumerate(lrd):
+        
+        lrd_neighbors = [lrdn[0]/l[0] 
+                         for k,lrdn
+                         in enumerate(lrd) 
+                         if order[k] in l[1]]
+        ofs[j] = (sum(lrd_neighbors)
+                  /float(len(lrd_neighbors)))
+    return ofs
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Priority queue
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 class PriorityQueue(object):
-    """A priority queue inspired by http://docs.python.org/2/library/heapq.html"""
+    """A priority queue inspired by 
+    http://docs.python.org/2/library/heapq.html"""
     def __init__(self):
         self.pq = []                         # list of entries arranged in a heap
         self.entry_finder = {}               # mapping of items to entries
@@ -131,6 +188,11 @@ class PriorityQueue(object):
         except KeyError:
             return None
 
+
+
+
+
+
 ## Test
 points = np.array([[ 15.,  70.],
                   [ 31.,  87.],
@@ -143,6 +205,11 @@ points = np.array([[ 15.,  70.],
                   [ 43.,  97.],
                   [ 97.,   9.]])
 result = [0, 1, 5, 6, 2, 7, 8, 3, 4, 9]
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Cluster extraction
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 def find_cluster(reach,ksi=0.001,M=5):
     color = ["k"] * len(reach)
@@ -222,7 +289,8 @@ def find_cluster(reach,ksi=0.001,M=5):
                 ## Compare the end pf the steep-up U area multiplied by (1-ksi)
                 ## with the mib value of the steep down area D thus satisfying 
                 ## the condition (sc2*).
-                #print("Compare {} and local mib {}".format(reach[eU]*(1-ksi),D[2]))
+                #print("Compare {} and
+                #local mib {}".format(reach[eU]*(1-ksi),D[2]))
                 if reach[eU]*(1-ksi) !=  D[2]:
                     s,e = compute_cluster((sU,eU),D,reach,ksi)
                     #print("Cluster possible in [{},{}] ({})\n".format(s,e,nc))
@@ -263,30 +331,6 @@ def cluster_cond(s,e,r,M,ksi):
         return True
 
 
-import visual
-def test(pts):
-    try:
-        o,r = optics(np.transpose(pts),100000,15)
-    except:
-        o = 0
-        r = 0
-    
-    try:
-        c,co = find_cluster(r,0.001,15)
-    except:
-        c = 0
-        co = 0 
-    try:
-        visual.plot_clust(r,co,c,False)
-    except:
-        print("Error in plot_clust")
-    try:
-        visual.plot_pclust(c,pts,r,o,True)
-    except:
-        print("Error in pclust")
-    return o,r,c
-
-
 def find_cluster_threshold(reach,threshold=None,M=5):
     color = ["k"] * len(reach)
     if threshold == None:
@@ -312,8 +356,6 @@ def find_clusters_sander(reach,ratio=0.80,M=5):
     using the method described in Sander et al. 2003 : 
     Automatic Extraction of Clusters from Hierarchical Clustering Representations"""
     
-
-
     color = ["k"] * len(reach)
 
     ## STEP ONE : Get an ordered list of locals maxima ##
@@ -371,6 +413,7 @@ def cluster_tree(N,P,ratio,reach,M,clusters):
           "N":s[0]-N["s"],
           "childs":[],
           "leaf":False}
+
     # N2 = p in N["points"] | p is right of s in the reachability plot  
     N2 = {"s":s[0]+1,
           "e":N["e"],
@@ -444,14 +487,3 @@ def cluster_tree(N,P,ratio,reach,M,clusters):
             cluster_tree(Ni,Li,ratio,reach,M,clusters)
 
 
-def compute_ofs(reach,M):
-    of = [0]*len(reach)
-    lrd =  [0]*len(reach)
-    for o,r in enumerate(reach):
-        if o >1 :
-            lrd[o] = 1/sum([r for r in reach[max(0,o-M):o]])/float(max(M,o))
-    #print lrd                  
-    for o,r in enumerate(reach):
-        if o > 1:
-            of[o] = sum([x/lrd[o] for x in lrd[max(0,o-M):o] if x != None])/float(max(M,o))
-    return of
