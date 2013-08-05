@@ -21,7 +21,7 @@ def get_color():
        random.shuffle(colors)
        colors = ["k"] + colors #non optimal...
        return itertools.cycle(colors)
-#       return itertools.cycle(['r', 'g', 'b', 'c', 'm', 'y', 'k'])
+
 
 def plot_particle(points,
                   attribution,

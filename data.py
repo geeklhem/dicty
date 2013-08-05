@@ -13,6 +13,7 @@ class Data(object):
               self.load_data(pointsfile,csl)
               
     def load_data(self,pointsfile,csl):
+        """ Load a csv file containing for each particle : "area","x","y","frame"."""
         images = np.genfromtxt(pointsfile,
                                skip_header=1,
                                delimiter=",",

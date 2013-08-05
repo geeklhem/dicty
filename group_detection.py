@@ -5,7 +5,6 @@
 import numpy as np
 import math
 
-
 def from_file(centerfile, csl=1000):
     """ Import groups from a csv file written with imageJ.
     Format : Id, Area, X, Y

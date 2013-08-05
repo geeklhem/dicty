@@ -6,8 +6,8 @@ import collections
 import numpy as np
 import scipy as sp
 
-
 def cell_by_section(attribution,nb_sections):
+    """ Return a list giving the number of particle for each section"""
     cc = collections.Counter(attribution)
 
     cell_by_center = [0] * nb_sections
@@ -17,6 +17,7 @@ def cell_by_section(attribution,nb_sections):
 
 
 def group_size_distrib(cellBySection,loners,nb_sections):
+    """ Return the distribution of the group size"""
     if cellBySection == []:
         return {"group_size_distrib":[0]*5,
                 "crowding":[0]*5,
@@ -37,8 +38,8 @@ def group_size_distrib(cellBySection,loners,nb_sections):
                 "mean_gs":np.mean(gs),
                 'mean_crowding':np.mean(g)}
 
-
 def lin_correlate(x,y):
+    """ Make a linear correlation between two values."""
     (a,b)=sp.polyfit(x,y,1)
     line=sp.polyval([a,b],x)
     err=np.sqrt(sum((line-y)**2)/len(x))

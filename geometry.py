@@ -5,10 +5,15 @@
 import numpy as np
 import math
 
-
-
 def get_neighbors(p,eps,points,mx=0):
-    ## O(n²) !!!!
+    """ Get the neighbors of p in points. 
+    If eps is precised, limit the research to a eps radius around p.
+    If mx is precised, only return the mx nearest points.
+
+    This function is slow (O(n²)). A better implementation of our algorithms 
+    would use spatialized data structures (eg. R-tree).
+    """
+
     if eps == None:
         eps = float("inf")
     distances = []
@@ -137,5 +142,5 @@ def area(polygon):
     for i,j in zip(polygon,polygon[-1:]+polygon[0:-1]):
         area += (j[0]+i[0]) * (j[1]-i[1])
     return abs(float(area/2))
-#pts = np.loadtxt("pts")
+
 

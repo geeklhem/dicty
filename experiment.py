@@ -1,5 +1,10 @@
 #!/usr/bin/env/ python
 # -*- coding: utf-8 -*-
+""" Experiment.py
+Contain the experiment class, which create object interfacing the data and the analyses
+algorithms.
+New kind of analysis should be described in subclasses of the general Experiment one.
+"""
 
 import os.path
 import pickle
@@ -15,16 +20,37 @@ import tracking
 import traceback
 
 class Experiment(object):
-    """A run of this software"""
+    """ The experiment object handle the data and its analysis.
+ 
+    - It comes with saving and loading functions (using pickle) for 
+      easy recovering 
+    - The kind of analysis performed is precised in the run function.
+    In this generic class nothing is done. You have to create inherited
+    classes of it to precise it. """
+
     def __init__(self,name,datafile="data/stack.csv",force=False,options={}):
-        """Experiment constructor"""
+        """Experiment constructor
+        Load data, initialize the attributes and start the analysis.
+
+        :param name: The name of the experiment. Export is under exports/name.
+        :type name: str
+        :param datafile: Path to the csv file containing particles positions.
+        :type datafile: str
+        :param force: If true overwrite previously created files.
+        :type force: bool
+        :param options: Parameters to the run function.
+        :type options: dict
+        """
+
+        self.options = options
 
         if name == "Same":
+            # If no name is precised, the saved file will have the same name
+            # as the datafile.
             self.name = os.path.splitext(os.path.basename(datafile))[0]
         else:
             self.name = name
 
-        self.options = options
         self.path = os.path.join("exports/",name+"/")
         self.savefile = os.path.join(self.path,name+".dicty")
 
@@ -33,50 +59,61 @@ class Experiment(object):
             print("Creating new file...")
             self.output = export.HtmlExport(name)
             self.data = data.Data(datafile)
-            self.step = "Loading"
-            self.save((self.output,self.data,self.step))
+            self.save("Loading")
         else:
             print("Loading")
-            self.output,self.data,self.step = self.load()
-            print("Data loaded, the file was saved at step {}".format(self.step))
-
+            self.output,self.data,self.saved_step = self.load()
+            print("Data loaded, the file was recovered at step {}".format(self.saved_step))
+        
+        # Run analysis, export results and save the object.
         self.run(**options)
-        # Run analysis, export result and save the object.
+        
         
     def load(self):
+        """ Loader for this object, using pickle."""
         with open(self.savefile, 'rb') as fichier:
             unpickler = pickle.Unpickler(fichier)
             return unpickler.load()
 
-    def save(self,s):
+    def save(self,saved_step):
+        """ Save function for this object, using pickle.
+        :param saved_step: The step at which the save is made,
+        for future loadings.
+        :type saved_step: str
+        """
+        self.saved_step = saved_step
         with open(self.savefile, 'wb') as fichier:
             pickler = pickle.Pickler(fichier)
-            pickler.dump(s)
+            pickler.dump((self.output,self.data,self.saved_step))
 
     def run(self,**options):
+        """ Run analysis, export results and save the object. 
+        Here nothing is done. Please subclass to precise the behavior
+        :param options: Options for the analysis. Usually come from the -p flag.
+        :type options: dict"""
         pass
 
   
 class OpticsAnalysis(Experiment):
-    def run(self,mif=0,maf=None,M=15,step=None,eps=None,method="threshold",ksi=0.001):
-    
-        self.M = M 
-
+    """ Analyse the data using the optics clustering algorithm."""
+    def run(self,mif=0,maf=None,M=15,step=None,eps=None):
+            """ Run analysis, export results and save the object. 
+            Save are done at each step. """
+        
         if not maf:
             maf = self.data.frame_nb
         
-        if self.step == "Loading" or step == "Analysis":
+        if self.saved_step == "Loading" or step == "Analysis":
             try:
                 print("Analysis...")
-                self.analysis(mif,maf,M,method,ksi,eps)
+                self.analysis(mif,maf,M,eps)
             except Exception:
                 print("ERROR: Error in analysis")
                 traceback.print_exc()
             else:
-                self.step = "Analysis"
-                self.save((self.output,self.data,self.step))
+                self.save("Analysis")
 
-        if self.step == "Analysis" or step == "Tracking":
+        if self.saved_step == "Analysis" or step == "Tracking":
             try:
                 print("Tracking...")
                 self.tracking()
@@ -84,10 +121,9 @@ class OpticsAnalysis(Experiment):
                 print("ERROR: Error in tracking")
                 traceback.print_exc()
             else:
-                self.step = "Tracking"
-                self.save((self.output,self.data,self.step))
+                self.save("Tracking")
 
-        if self.step == "Tracking" or step == "Export":
+        if self.saved_step == "Tracking" or step == "Export":
             try:
                 print("Export...")
                 self.export(mif,maf)
@@ -95,12 +131,11 @@ class OpticsAnalysis(Experiment):
                 print("ERROR: Error in export")
                 traceback.print_exc()
             else:
-                self.step = "Export"
-                self.save((self.output,self.data,self.step))
-
-
+                self.save("Export")
 
     def analysis(self,mif,maf,M,method,ksi,eps):
+        """ For each frame, execute the clustering algorithm, 
+        extract clusters and compute their characteristics."""
         self.data.attribution = []
         self.data.reach = []
         self.data.order = []
@@ -138,6 +173,7 @@ class OpticsAnalysis(Experiment):
 
 
     def tracking(self):
+        """Once each frame has been processed, reconstruct the genealogy of groups"""
 
         # Find the ancestor of each cluster.
         self.data.tracking = tracking.track_cluster(self.data.clusters)
@@ -150,8 +186,10 @@ class OpticsAnalysis(Experiment):
                                                          self.data.clusters)
 
     def export(self,mif,maf):
+        """ Construct the html export""" 
         self.output.elements = []
-        # EXPORT 
+        
+        # General figures
         self.output.add_text("Analysis of {}".format(self.name))
         self.output.add_text("<strong>Clustering algorithm</strong> : Optics")
         self.output.add_text("<strong>Parameters</strong> : ".format(self.options))
@@ -199,8 +237,8 @@ class OpticsAnalysis(Experiment):
                             proportions=(4,2))
 
 
+        # Frame by frame figures
         self.output.add_title("Frame by frame".format(f))
-
         for f in range(maf-mif):
             print("Frame {}/{}".format(f+mif+1,maf))
             self.output.add_title("Frame {0}".format(f+mif+1),3)
@@ -231,7 +269,8 @@ class OpticsAnalysis(Experiment):
             <strong>Mean crowding</strong> :   {0[mean_crowding]},
             <strong>Mean group size</strong> : {0[mean_gs]} 
             """.format(self.data.distrib[f]))
+       
         self.output.add_slideshow("particle_")
-        
-        #Make html
+
+        # Make html
         self.output.export()

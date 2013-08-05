@@ -31,8 +31,13 @@ __license__ = "GPLv3"
 __version__ = "alpha"
 
 def main(args):
+    ""' Main function of the program. 
+    Interpret arguments and create the experiment object
+    (which does the actual work).
+    """ 
+
     if  args["--license"]:
-        print('\n  DICTy : Dictyostelium Images Clustering and Tracking for pYthon  - v'+__version__)
+        print("\n  DICTy : Dictyostelium Images Clustering and Tracking for pYthon  - v"+__version__)
         print("    Copyright (C) 2013 Guilhem DOULCIER")
         print("    This program comes with ABSOLUTELY NO WARRANTY.")
         print("    This program is free software: you can redistribute it and/or modify")
@@ -41,6 +46,7 @@ def main(args):
         print("    (at your option) any later version.\n")
         sys.exit(2)
     
+    #Create a dicionnary from the parameter p.
     param = {}
     if args["-p"]:
         custom_p = args["-p"].split(",")
@@ -49,14 +55,13 @@ def main(args):
             try:
                 evaluated = ast.literal_eval(p[1])
             except:
-                print("Error in evaluting {0} argument. Value set to".format(p[0],p[1]))
+                print("Error in evaluting {0} argument. Value set to {}".format(p[0],p[1]))
                 param[p[0]]=p[1]
             else:
                 param[p[0]]=evaluated
-    print param
-    
+   
+    # Create the experiment object.
     ExperimentClass = getattr(experiment,args["-a"])
-    
     exp = ExperimentClass(args["-o"],
                           datafile=args["<file>"],
                           force=args["-f"],
@@ -64,17 +69,25 @@ def main(args):
 
     return exp
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# If the file is launched from the command line.
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 if __name__ == "__main__":
     args = docopt.docopt(__doc__, version=__version__)
     main(args)
-    
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Exemples of inputs.
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 fake_args = {'--help': False,
              '--license': False,
              '--version': False,
              '-a': 'OpticsAnalysis',
              '-f': True,
              '-o': 'slice',
-             '-p': "mif=15,maf=17,method=sander,M=15",
+             '-p': "mif=15,maf=17,M=15",
              '<file>': "data/stack.csv"}
     
 argtot = {'--help': False,
@@ -83,7 +96,5 @@ argtot = {'--help': False,
              '-a': 'OpticsAnalysis',
              '-f': False,
              '-o': 'Sander',
-             '-p': 'method="sander",M=15',
+             '-p': 'M=15',
              '<file>': "data/stack.csv"}
-    
-

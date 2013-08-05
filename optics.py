@@ -93,6 +93,7 @@ def core_dist(p,N,M,points):
 
 
 def update(N,p,seeds,eps,M,points,processed,reach):
+    """Update the priority queue """
     cd = core_dist(p,N,M,points)
     for n in N:
         if not processed[n]:
@@ -105,7 +106,9 @@ def update(N,p,seeds,eps,M,points,processed,reach):
                 #If we can improve its reachability distance
                 if new_rd < reach[n]:
                     reach[n] = new_rd
-                    seeds.add(n,new_rd) #update
+                    #update, if the reachability distance is lowered, then
+                    #this point should change position in the queue.
+                    seeds.add(n,new_rd) 
 
 
 #~~~~~~~~~~
@@ -190,9 +193,6 @@ class PriorityQueue(object):
 
 
 
-
-
-
 ## Test
 points = np.array([[ 15.,  70.],
                   [ 31.,  87.],
@@ -210,147 +210,6 @@ result = [0, 1, 5, 6, 2, 7, 8, 3, 4, 9]
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Cluster extraction
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-def find_cluster(reach,ksi=0.001,M=5):
-    color = ["k"] * len(reach)
-    steep_down_list = []
-    clusters = []
-    mib = 0
-    i = 0
-    nc = 0
-    while i < len(reach)-2:
-        # Global mib-value containing the maximum between the end of the last
-        # steep and region and the current index.
-        mib = max(mib,reach[i])
-
-        ## If i is the start of a steep down area.
-        if reach[i]*(1-ksi) > reach[i+1]:
-            #print("STEEP DOWN starting in {}".format(i) +
-            #      " ({} are opened)".format(len(steep_down_list)))
-            steep_down_list = update_and_filter(steep_down_list,reach,i,ksi,mib)
-
-            sD = i   # start of current downward region.
-            color[i] = "r"
-            
-            # Go to the end of the steep area.
-            sigma = 0
-            while (reach[i+1]<=reach[i] 
-                   and sigma < M
-                   and i+1<len(reach)-2
-                   and not reach[i+1] < reach[i+2]*(1-ksi)):
-                # Test if there is no more than M consecutives
-                # points that are not ksi-steep.
-                if reach[i+1]*(1-ksi) >= reach[i+2]: # i+1 is ksi-steep downward.
-                    sigma = 0
-                else:
-                    sigma += 1
-                i += 1
-                color[i] = "r"
-            #print("Ending in {}\n".format(i))
-
-            eD = i   # end of current downward region.
-            #Save the current downward area : [start,end,mib]
-            steep_down_list.append([sD,eD,0]) 
-
-            i +=1
-            mib = reach[i]
-
-        ##If i is the start of a steep up area.
-        elif reach[i] < reach[i+1]*(1-ksi):
-            #print("STEEP UP starting in {}".format(i))
-            steep_down_list = update_and_filter(steep_down_list,reach,i,ksi,mib)
-
-            sU = i  # start of current upward region.
-            color[i] = "g"
-
-            # Go to the end of the steep area.
-            sigma = 0
-            while (reach[i+1]>=reach[i] 
-                   and sigma < M 
-                   and i+1<len(reach)-2
-                   and not reach[i+1]*(1-ksi) > reach[i+2]):
-                # Test if there is no more than M consecutives
-                # points that are not ksi-steep.              
-                if reach[i+1] <= reach[i+2]*(1-ksi): #i is ksi steep-upward.
-                    sigma = 0
-                else:
-                    sigma += 1
-                i += 1
-                color[i] = "g"
-            #print("Ending in {}\n".format(i))
-            
-
-            eU = i #end of the current upward region.
-
-            i +=1
-            mib = reach[i]
-
-            for D in steep_down_list:
-                ## Compare the end pf the steep-up U area multiplied by (1-ksi)
-                ## with the mib value of the steep down area D thus satisfying 
-                ## the condition (sc2*).
-                #print("Compare {} and
-                #local mib {}".format(reach[eU]*(1-ksi),D[2]))
-                if reach[eU]*(1-ksi) !=  D[2]:
-                    s,e = compute_cluster((sU,eU),D,reach,ksi)
-                    #print("Cluster possible in [{},{}] ({})\n".format(s,e,nc))
-                    nc += 1
-                    if cluster_cond(s,e,reach,M,ksi):
-                        clusters.append((s,e))
-                        #print("Cluster confirmed\n")
-        else:
-            i += 1
-    return clusters, color
-
-def update_and_filter(steep_down,r,i,ksi,global_mib):
-    sd = []
-    for (s,e,mib) in steep_down:
-        mib = max(mib,global_mib)
-        if r[s] * (1-ksi) >= global_mib:
-            sd.append([s,e,mib])
-    return sd
-
-def compute_cluster(U,D,r,ksi):
-    if r[D[0]] * (1-ksi) >= r[U[1]+1]:
-        s = max([x for x in range(D[0],D[1]+1) if (r[x] > r[U[1]+1])])
-        return(s,U[1])
-    elif r[U[1]+1] * (1-ksi) >= r[D[0]]:
-        e = min([x  for x in range(U[0],U[1]+1) if (r[x] < r[D[0]])])
-        return(D[0],e)
-    else:
-        return(D[0],U[1])
-
-def cluster_cond(s,e,r,M,ksi):
-    if e-s < M:
-        return False
-    elif not r[s] * (1-ksi) >= r[s+1]:
-        return False
-    elif not r[e] <= r[e+1] * (1-ksi):
-        return False
-    else:
-        return True
-
-
-def find_cluster_threshold(reach,threshold=None,M=5):
-    color = ["k"] * len(reach)
-    if threshold == None:
-        threshold = max(reach)/3. #max(reach)-min(reach))/5. + min(reach)
-    clusters = []
-    s = None
-    e = None
-    for k,(r,rm1) in enumerate(zip(reach[1:],reach[:-1])):
-        if s and not e:
-            color[k] = "b"
-        if r > threshold and rm1 < threshold and s != None and k-1-s > M:
-            e = k-1
-            clusters.append((s,e))
-            s = None
-            e = None
-        elif r < threshold and rm1 > threshold:
-            s = k-1
-    return clusters, color
-
-
 def find_clusters_sander(reach,ratio=0.80,M=5):
     """ Extract cluster from the reachability distance plot 
     using the method described in Sander et al. 2003 : 

@@ -1,6 +1,6 @@
 #!/usr/bin/env/ python
 # -*- coding: utf-8 -*-
-"""HTML export"""
+"""Export tool for the Experiment class."""
 
 import os
 import errno
@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import glob
 
 class HtmlExport(object):
+    """ HTML Export """
     def __init__(self,name):
         self.date = time.strftime("%Y-%m-%d %H:%M:%S",time.gmtime())
         self.host = socket.gethostname()
@@ -64,7 +65,18 @@ class HtmlExport(object):
         except OSError as ex:
             if ex.errno != errno.EEXIST:
                 raise
+
+    def export(self):
+        """ Write the html file."""
+        page = self.header + "".join(self.elements) + self.footer
+        with open(os.path.join(self.path,"index.html"), 'w') as f:
+            f.write(page)
+
+
     def add_all_img(self,pattern):
+        """Add to the html export all images files matching a pattern
+        :param pattern: The glob pattern.
+        :type pattern: str"""
         pics = ""
         for i in sorted(glob.glob(os.path.join(name,pattern))):
                pics += """
@@ -73,13 +85,33 @@ class HtmlExport(object):
         self.elements.append(pics)
 
     def add_text(self,text):
+        """ Add text to the html export.
+        :param text: The text to add.
+        :type text: str"""
         self.elements.append("<p>{}</p>".format(text))
 
     def add_title(self,text,lvl=2):
+        """ Add a title to the html export.
+        :param text: Title text.
+        :type text: str
+        :param lvl: Level of the title (default 2)
+        :type lvl: int
+        """ 
         self.elements.append("<h{l}>{title}</h{l}>".format(title=text,l=lvl))
 
     def add_fig(self,name,graphical_function,args=(),kargs={},proportions=(1,1)):
-       
+        """ Generate and add a figure to the html export.
+        :param name: file name
+        :type name: str
+        :param graphical_function: function used to draw the figure.
+        :type graphical_function: function
+        :param args: unnamed arguments to the graphical function.
+        :type args: tuple
+        :param kargs: named arguments to the graphical function
+        :type kargs: dict
+        :param proportions: Proportion of the image file. (Default: (1,1))
+        :type proportions: tuple"""
+
         p = os.path.join(self.path,name+".png")
 
         graphical_function(*args,show=False,**kargs)
@@ -94,6 +126,7 @@ class HtmlExport(object):
         """.format(path=name+'.png',name=graphical_function.__name__))
 
     def add_slideshow(self,name):
+        """ Add the javascript slideshow to the html export."""
         try:
             i = self.elements.index("<slideshow>")
         except ValueError:
@@ -158,7 +191,3 @@ class HtmlExport(object):
         self.elements[i] = html 
         return html
 
-    def export(self):
-        page = self.header + "".join(self.elements) + self.footer
-        with open(os.path.join(self.path,"index.html"), 'w') as f:
-            f.write(page)

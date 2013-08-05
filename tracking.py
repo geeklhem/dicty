@@ -4,6 +4,8 @@
 
 import numpy as np
 import math
+import colorsys
+import copy
 
 import geometry as geo
 
@@ -63,6 +65,7 @@ def track_cluster(clusters_frame):
     return tracking
 
 def traces(tracking):
+    """Reconstruct the traces from tracked clusters."""
     nb_start = 0
     traces = []
     delete = []
@@ -111,15 +114,9 @@ fake_clusters = [[{"N":90},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10}
                  [{"N":120},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10}],
                  [{"N":10},{"N":10},{"N":110},{"N":10},{"N":10},{"N":10},{"N":10},{"N":10}]] 
 
-# fake_traces = traces(fake_tracking) 
-# fake_tclust=traced_clusters_list(fake_traces,fake_clusters)
-# tree_trace(fake_tclust,fake_clusters)
-# plt.show()
-
-import colorsys
-import copy
 
 def traced_clusters_list(traces,clusters):
+    """ Get the index of the tracked clusters"""
     tclusters = []
     current_color = [0,.4,1]
     hue_step = .9/len(traces)
