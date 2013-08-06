@@ -31,7 +31,7 @@ __license__ = "GPLv3"
 __version__ = "alpha"
 
 def main(args):
-    ""' Main function of the program. 
+    """ Main function of the program. 
     Interpret arguments and create the experiment object
     (which does the actual work).
     """ 
@@ -98,3 +98,12 @@ argtot = {'--help': False,
              '-o': 'Sander',
              '-p': 'M=15',
              '<file>': "data/stack.csv"}
+    
+sim = {'--help': False,
+       '--license': False,
+       '--version': False,
+       '-a': 'OpticsAnalysis',
+       '-f': False,
+       '-o': 'Simulation1',
+       '-p': 'M=15',
+       '<file>': "data/donnees_thomas/xy.txt"}

@@ -43,7 +43,10 @@ def convex_hull(points):
     # If the lowest y-coordinate exist in more than one points in the set...
     if len(iymin) > 1:
         # ...take the point with the lowest x-coordinate out of the candidates.
-        ip = points[0,:].index(min([p[0] for k,p in enumerate(points) if k in iymin]))
+        xmin = [(k,points[0,k]) 
+                for k in iymin]
+        xmin.sort(key = lambda x:x[1])
+        ip = xmin[0][0]
     else:
         ip = iymin[0]
 

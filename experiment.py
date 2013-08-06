@@ -58,7 +58,7 @@ class Experiment(object):
         if not os.path.isfile(self.savefile) or force:
             print("Creating new file...")
             self.output = export.HtmlExport(name)
-            self.data = data.Data(datafile)
+            self.data = data.Data(datafile,fileformat="sim",interval=50)
             self.save("Loading")
         else:
             print("Loading")
@@ -97,7 +97,7 @@ class Experiment(object):
 class OpticsAnalysis(Experiment):
     """ Analyse the data using the optics clustering algorithm."""
     def run(self,mif=0,maf=None,M=15,step=None,eps=None):
-            """ Run analysis, export results and save the object. 
+        """ Run analysis, export results and save the object. 
             Save are done at each step. """
         
         if not maf:
@@ -133,7 +133,7 @@ class OpticsAnalysis(Experiment):
             else:
                 self.save("Export")
 
-    def analysis(self,mif,maf,M,method,ksi,eps):
+    def analysis(self,mif,maf,M,eps):
         """ For each frame, execute the clustering algorithm, 
         extract clusters and compute their characteristics."""
         self.data.attribution = []
@@ -151,9 +151,7 @@ class OpticsAnalysis(Experiment):
             print("Frame : {}/{}".format(f+1,maf))
             partition = partitions.optics_clust(self.data.points[f],
                                                 eps=eps,
-                                                ksi=ksi,
-                                                M=M,
-                                                method=method)
+                                                M=M)
             self.data.frame_info.append({
                 "loners":partition["loners"],
                 "N":len(self.data.points[f][0:][0]),})
