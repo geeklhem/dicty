@@ -11,8 +11,8 @@ class Data(object):
             self.load_data_sim(pointsfile,interval)
         else:
             self.load_data(pointsfile,csl)
-        self.X = max([max(p[0,:]) for p in points]) 
-        self.Y = max([max(p[1,:]) for p in points]) 
+        self.X = max([max(p[0,:]) for p in self.points]) 
+        self.Y = max([max(p[1,:]) for p in self.points]) 
         self.X *= 1.1
         self.Y *= 1.1
 
