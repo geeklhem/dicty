@@ -58,7 +58,8 @@ class Experiment(object):
         if not os.path.isfile(self.savefile) or force:
             print("Creating new file...")
             self.output = export.HtmlExport(name)
-            self.data = data.Data(datafile,fileformat="sim",interval=50)
+            #self.data = data.Data(datafile,fileformat="sim",interval=50)
+            self.data = data.Data(datafile)
             self.save("Loading")
         else:
             print("Loading")

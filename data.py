@@ -54,9 +54,9 @@ class Data(object):
         self.frame_names = []
         self.N = []
 
-        for img in range(1,int(images["img"][-1])/interval):
-            print("Load {}/{}".format(img,int(images["img"][-1])/interval))
-            img = img*interval
+        for img in range(1,50):
+            print("Load {}/{}".format(img,50))
+            img = img
             self.points.append((
                 np.transpose(np.array([(x,y) 
                                        for x,y,sl 

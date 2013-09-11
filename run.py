@@ -104,6 +104,26 @@ sim = {'--help': False,
        '--version': False,
        '-a': 'OpticsAnalysis',
        '-f': False,
-       '-o': 'Simulation1',
+       '-o': 'Simulation3',
        '-p': 'M=15',
        '<file>': "data/donnees_thomas/xy.txt"}
+  
+ring02111 = {'--help': False,
+             '--license': False,
+             '--version': False,
+             '-a': 'OpticsAnalysis',
+             '-f': False,
+             '-o': '021111RinGMosaic10x',
+             '-p': 'M=15',
+             '<file>': "data/021111RinGMosaic10x.csv"}
+    
+ring181111 = {'--help': False,
+             '--license': False,
+             '--version': False,
+             '-a': 'OpticsAnalysis',
+             '-f': False,
+             '-o': '181111AX3RinGMosaic',
+             '-p': 'M=15',
+             '<file>': "data/181111AX3RinGMosaic.csv"}
+ 
+         
