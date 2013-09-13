@@ -9,11 +9,11 @@ New kind of analysis should be described in subclasses of the general Experiment
 import os.path
 import pickle
 import copy
+import logging
 
 import export
 import visual
 import data 
-import group_detection
 import partitions
 import analysis
 import tracking
@@ -25,8 +25,10 @@ class Experiment(object):
     - It comes with saving and loading functions (using pickle) for 
       easy recovering 
     - The kind of analysis performed is precised in the run function.
+
     In this generic class nothing is done. You have to create inherited
-    classes of it to precise it. """
+    classes of it to precise it.
+    """
 
     def __init__(self,name,datafile="data/stack.csv",force=False,options={}):
         """Experiment constructor
@@ -56,21 +58,27 @@ class Experiment(object):
 
         # Write if file doesn't exist, overwrite if force option enabled.
         if not os.path.isfile(self.savefile) or force:
-            print("Creating new file...")
+            logging.info("Creating new file : {}.".format(self.savefile))
             self.output = export.HtmlExport(name)
-            #self.data = data.Data(datafile,fileformat="sim",interval=50)
             self.data = data.Data(datafile)
+            if "format" in options.keys():
+                if not "interval" in options.keys():
+                    logging.warn("No interval parameter set. Default value (50) used.")
+                    options["interval"] = 50
+                self.data = data.Data(datafile,
+                                      fileformat=options["format"],
+                                      interval=options["interval"])
             self.save("Loading")
         else:
-            print("Loading")
+            logging.info("Loading file : {}.".format(self.savefile))
             self.output,self.data,self.saved_step = self.load()
-            print("Data loaded, the file was recovered at step {}".format(self.saved_step))
-        
+            logging.info("Data loaded, the file was recovered at step {}".format(self.saved_step))
+            
         # Run analysis, export results and save the object.
         self.run(**options)
         
         
-    def load(self):
+    def load(file):
         """ Loader for this object, using pickle."""
         with open(self.savefile, 'rb') as fichier:
             unpickler = pickle.Unpickler(fichier)
@@ -106,31 +114,28 @@ class OpticsAnalysis(Experiment):
         
         if self.saved_step == "Loading" or step == "Analysis":
             try:
-                print("Analysis...")
+                logging.info("Analysis...")
                 self.analysis(mif,maf,M,eps)
             except Exception:
-                print("ERROR: Error in analysis")
-                traceback.print_exc()
+                logging.exception("Error during the analysis.")
             else:
                 self.save("Analysis")
 
         if self.saved_step == "Analysis" or step == "Tracking":
             try:
-                print("Tracking...")
+                logging.info("Tracking...")
                 self.tracking()
             except Exception:
-                print("ERROR: Error in tracking")
-                traceback.print_exc()
+                logging.exception("Error during the tracking.")
             else:
                 self.save("Tracking")
 
         if self.saved_step == "Tracking" or step == "Export":
             try:
-                print("Export...")
+                logging.info("Exporting...")
                 self.export(mif,maf)
             except Exception:
-                print("ERROR: Error in export")
-                traceback.print_exc()
+                logging.exception("Error during the exporting.")
             else:
                 self.save("Export")
 
@@ -149,7 +154,7 @@ class OpticsAnalysis(Experiment):
 
         # ANALYSIS
         for f in range(mif,maf):
-            print("Frame : {}/{}".format(f+1,maf))
+            logging.info("   Processing frame {}/{}.".format(f+1,maf))
             partition = partitions.optics_clust(self.data.points[f],
                                                 eps=eps,
                                                 M=M)
@@ -239,7 +244,7 @@ class OpticsAnalysis(Experiment):
         # Frame by frame figures
         self.output.add_title("Frame by frame".format(f))
         for f in range(maf-mif):
-            print("Frame {}/{}".format(f+mif+1,maf))
+            logging.info("   Processing frame {}/{}.".format(f+1+mif,maf))
             self.output.add_title("Frame {0}".format(f+mif+1),3)
             self.output.add_text("{} clusters, {} Loners detected".format(
                 self.data.frame_info[f]["N"],

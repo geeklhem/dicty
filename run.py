@@ -1,10 +1,10 @@
 #!/usr/bin/env/ python
 # -*- coding: utf-8 -*-
 """
-DICTy : Dictyostelium Images Clustering and Tracking for pYthon 
+DICTpy : Dictyostelium Images Clustering and Tracking for Python 
 
 Usage:
-  run.py <file> [-a=<analysis>] [-o=<outputName>] [-p=<parameters>] [-f]
+  run.py <file> [-a=<analysis>] [-o=<outputName>] [-p=<parameters>] [-f] [-v|-vv]
   run.py [--help|-h|--version|--license]
 
 Where <file> is a csv file containing for each particle : "area","x","y","frame".
@@ -15,12 +15,15 @@ Options:
   -p=<parameters>          Analysis parmeters in the format "p1=value;p2=value;p3=v"
   -f                       Force overwrite
   -h --help                Show this screen.
+  -v                       Verbose mode (Confirmation that things are working as expected.)
+  -vv                      Very verbose mode (Detailed information for diagnosing problems.)
   --version                Show version.
   --license                Show license information.
 """
 
 import sys
 import ast
+import logging
 
 import docopt
 import experiment 
@@ -46,7 +49,17 @@ def main(args):
         print("    (at your option) any later version.\n")
         sys.exit(2)
     
-    #Create a dicionnary from the parameter p.
+
+    # Logging options
+    log_level = logging.WARNING # default
+    if args["-v"]:
+        log_level = logging.INFO
+    elif args["-vv"]:
+        log_level = logging.DEBUG
+    logging.root.handlers = []
+    logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG)
+
+    #Create a dicionnary from the parameter p.x
     param = {}
     if args["-p"]:
         custom_p = args["-p"].split(",")
@@ -55,7 +68,7 @@ def main(args):
             try:
                 evaluated = ast.literal_eval(p[1])
             except:
-                print("Error in evaluting {0} argument. Value set to {}".format(p[0],p[1]))
+                logging.error("Error in evaluting {0} argument. Value set to {1}.".format(p[0],p[1]))
                 param[p[0]]=p[1]
             else:
                 param[p[0]]=evaluated
@@ -84,6 +97,8 @@ if __name__ == "__main__":
 fake_args = {'--help': False,
              '--license': False,
              '--version': False,
+             '-v': True,
+             '-vv': False, 
              '-a': 'OpticsAnalysis',
              '-f': True,
              '-o': 'slice',
@@ -93,6 +108,8 @@ fake_args = {'--help': False,
 argtot = {'--help': False,
              '--license': False,
              '--version': False,
+             '-v': True,
+             '-vv': False, 
              '-a': 'OpticsAnalysis',
              '-f': False,
              '-o': 'Sander',
@@ -102,15 +119,19 @@ argtot = {'--help': False,
 sim = {'--help': False,
        '--license': False,
        '--version': False,
+       '-v': True,
+       '-vv': False, 
        '-a': 'OpticsAnalysis',
        '-f': False,
        '-o': 'Simulation3',
-       '-p': 'M=15',
+       '-p': 'M=15,format="Simulation",interval=50',
        '<file>': "data/donnees_thomas/xy.txt"}
   
 ring02111 = {'--help': False,
              '--license': False,
              '--version': False,
+             '-v': True,
+             '-vv': False, 
              '-a': 'OpticsAnalysis',
              '-f': False,
              '-o': '021111RinGMosaic10x',
@@ -120,6 +141,8 @@ ring02111 = {'--help': False,
 ring181111 = {'--help': False,
              '--license': False,
              '--version': False,
+             '-v': True,
+             '-vv': False, 
              '-a': 'OpticsAnalysis',
              '-f': False,
              '-o': '181111AX3RinGMosaic',

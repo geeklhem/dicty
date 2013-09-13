@@ -1,4 +1,4 @@
-#+TITLE:DICTy - Dictyostelium Images Clustering and Tracking for pYthon.
+#+TITLE:DICTpy - Dictyostelium Images Clustering and Tracking for PYthon.
 #+Author:Guilhem Doulcier
 #+Date:<2013-07-11 Thu 16:07>
 
@@ -6,7 +6,6 @@ DICTy (Dictyostelium Images Clustering and Tracking for pYthon) is a tool to aut
 
 * Features
 
-- Voronoi partition.
 - Particle clustering using OPTICS algorithm [fn:Ankerst99].
 - Crowding and group size estimations.
 - HTML export.
@@ -38,11 +37,13 @@ To create new kind of analysis, create inherited class of those already defined 
 - Numpy and Scipy
 - Matplotlib
 - Docopt
+
 * License
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+
 * Footnotes
 [fn:Ankerst99] Mihael Ankerst, Markus M. Breunig, Hans-Peter Kriegel, Jörg Sander (1999). *OPTICS: Ordering Points To Identify the Clustering Structure*. /ACM SIGMOD international conference on Management of data/. ACM Press. pp. 49–60.

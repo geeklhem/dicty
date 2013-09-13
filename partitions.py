@@ -11,10 +11,11 @@ import geometry as geo
 
 def voronoi(center,points):
     """ Partitions the points using voronoi cells.
+
     :param center: Voronoi cells center's position.
     :type center: list
     :param points: Points position.
-    :points type: np.array
+    :type points: np.array
     :return: a dict. with a len(points) list with the index of the group they belong to"""
 
     d = geo.d
@@ -34,15 +35,26 @@ def voronoi(center,points):
                 attribution[k] = i
     return {"attribution": attribution}
 
-
+   
 def optics_clust(points,eps=9000,M=15):
     """ Make the partition using OPTICS clustering algorithm. 
+
+    :Parameters:
+        points : list
+            Input points
+        eps : float
+            Optics' epsilon parameter.
+        M : int
+            Minimal number of points by cluster.
+
     :return: A dictionary.
-    
+ 
+    Returned dictionnary contains :
+
     - "attribution": a len(points) list with the index of the group
-    they belong to.
-    - "reach": Minimal reachability distance of a point to the previous
-    in the walk.
+       they belong to.
+    - "reach": Minimal reachability distance of a point to the previous 
+      in the walk.
     - "order": Order of the points in the walk,
     - "clusters": List of dicts. containing clusters information.,
     - "loners": Number of loners,
